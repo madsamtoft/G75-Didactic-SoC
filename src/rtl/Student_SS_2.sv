@@ -58,9 +58,6 @@ module student_ss_2(
 
 // this file contains minimal functionality to avoid breaking anything in other ends of the chip.
 
-  assign ana_core_in  = 'd0;
-  assign ana_core_out = 'd0;
-
 //  reg [3:0] strb;
 //
 //  reg [1:0] reset_sync;

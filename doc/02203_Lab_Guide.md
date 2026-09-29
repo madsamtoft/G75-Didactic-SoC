@@ -3,7 +3,7 @@
 
 This laboratory exercise extends the existing image processing accelerator lab by integrating it into the Didactic-SoC and introducing data transport between the CPU, accelerator, and UART peripheral. The goal is to expose students to memory-mapped hardware modules, a simple SoC architecture, and hardware-software co-design.
 
-This lab supports Linux and Windows operating systems. For Linux the commands are given and were tested on a Ubuntu 24.04 LTS system.
+This lab supports Linux and Windows operating systems. For Linux, the commands were tested on an Ubuntu 24.04 LTS system.
 
 ## Software requirements
 
@@ -13,9 +13,10 @@ This lab supports Linux and Windows operating systems. For Linux the commands ar
 | 2 | Questa Starter Edition | Simulation |
 | 3 | WSL2 | Windows only |
 | 4 | `riscv64-unknown-elf` toolchain | Cross-compiler |
-| 5 | Vivado | FPGA synthesis and implementation |
-| 6 | Python 3 | For the PC side of the FPGA test. Packages: `pyserial`, `Pillow`, `appJar`, `python3-tk` |
-| 7 | OpenOCD (Optional) | JTAG debugging |
+| 5 | Bender | Hardware dependency manager |
+| 6 | Vivado | FPGA synthesis and implementation |
+| 7 | Python 3 | For the PC side of the FPGA test. Packages: `pyserial`, `Pillow`, `appJar`, `python3-tk` |
+| 8 | OpenOCD and GDB (Optional) | JTAG debugging |
 
 Refer to [02203_Software_setup](02203_Software_setup.md) for setting up the required tools.
 
@@ -26,11 +27,11 @@ Refer to [02203_Software_setup](02203_Software_setup.md) for setting up the requ
 You will implement an **edge detection accelerator** in RTL and run it as a
 hardware module inside the **Didactic-SoC**. 
 
-The SoC receives an image over UART, a RISC-V CPU feeds this image into your accelerator, waits for it to finish processing, and streams the result back out over UART. The edge detection algorithm is described in the pdf, this guide is about its integration in the SoC.
+The SoC receives an image over UART, a RISC-V CPU feeds this image into your accelerator, waits for it to finish processing, and streams the result back out over UART. The edge detection algorithm is described in the Assignment 2 PDF; this guide focuses on its integration in the SoC.
 
 ### The Didactic-SoC in one minute
 
-The Didactic-SoC is a small RISC-V system-on-chip, it has two parts:
+The Didactic-SoC is a small RISC-V system-on-chip and consists of two parts:
 
 - a fixed **staff (management) section** - a RISC-V **Ibex** core (RV32IMC),
   16 KiB instruction memory (IMEM) and 16 KiB data memory (DMEM),
@@ -83,15 +84,15 @@ The CPU drives the accelerator through the CSR at the SS0 base address:
 
 ### Testing
 
-The **end goal** is a full round trip: a PC sends an image to the Didactic-SoC over UART, the CPU runs it through your accelerator, and the SoC sends the processed image back over UART to the PC, where you view it. On real hardware (Task 3-4) this is done with the board plugged into a USB port and a Python GUI on the PC driving the serial link.
+The **end goal** is a full processing 'round trip': a PC sends an image to the Didactic-SoC over UART, the CPU runs it through your accelerator, and the SoC sends the processed image back over UART to the PC, where you view it. On real hardware (Tasks 3-4), this is done with the board plugged into a USB port and the serial-interface GUI on the PC driving the link.
 
 You do not need the FPGA to develop, though. The lab builds up to that round trip in three stages, each with its own simulation:
 
 | Stage | Testbench | What it exercises | What plays the PC |
 |-------|-----------|-------------------|---------------------|
-| Task 0-1 | `src/tb/tb_student_ss.sv` | Your accelerator alone | The testbench drives the CSR and buffers directly over **APB** and reads/writes `.pgm` files - no CPU, no UART |
+| Tasks 0-1 | `src/tb/tb_student_ss.sv` | Your accelerator alone | The testbench drives the CSR and buffers directly over **APB** and reads/writes `.pgm` files - no CPU, no UART |
 | Task 2 | `src/tb/tb_didactic_V1.sv` | The whole SoC running the real CPU firmware | The testbench emulates the PC: it bit-bangs the image in over **UART**, the CPU and your accelerator do the rest |
-| Task 3-4 | real FPGA | The taped-out flow on a Nexys A7 | An actual PC running the Python serial GUI |
+| Tasks 3-4 | real FPGA | The FPGA flow on a Nexys A7 | An actual PC running the serial GUI |
 
 Both testbenches write the processed image to a `.pgm` in `src/tb/out_images/` for visual inspection. View it with **IrfanView** or any viewer that supports the PGM format.
 
@@ -100,9 +101,16 @@ To keep the system simulation fast, `tb_didactic_V1.sv` takes two shortcuts: it 
 ---
 
 ## Tasks
-### 0.  Test the Didactic-SoC with a Working Example
 
-This task checks that your toolchain is complete and introduces the `make` flow. The steps below exercise the tools you installed: Bender (fetches the hardware dependencies), the RISC-V cross-compiler (builds the firmware), and Questa (runs the simulation). Steps 2 and 3 are independent - `tb_student_ss` drives the accelerator directly and never runs the CPU firmware.
+The following tasks define the work to be completed for this assignment. Work through them in order, as each task builds on the previous one. The detailed instructions, required files, commands, and expected results are given under each task.
+
+### Task 0: Test the Didactic-SoC with a Working Example
+
+**Purpose.** Check that your toolchain is complete, become familiar with the provided pixel-inversion example, and learn the `make` flow before changing any RTL.
+
+The steps below exercise the tools you installed: Bender (fetches the hardware dependencies), the RISC-V cross-compiler (builds the firmware), and Questa (runs the simulation). Steps 2 and 3 are independent - `tb_student_ss` drives the accelerator directly and never runs the CPU firmware.
+
+For this task, inspect the provided `src/rtl/Student_area_0.sv`, `src/rtl/pixel_acc.sv`, `src/tb/tb_student_ss.sv`, and `sw/pixel_inversion/pixel_inversion.c`. You should not need to edit them.
 
 Run all commands from the project root, `02203-Didactic-SoC/`.
 
@@ -158,44 +166,57 @@ Same run, but Questa opens with a preconfigured waveform (`wave_ss.do`). Use thi
 
 ---
 
-### 1.  Develop the Edge Detection Accelerator
+### Task 1: Develop the Edge Detection Accelerator
 
-#### Architecture consideration
+**Purpose.** Design the Sobel edge detector, implement it in the provided accelerator module, and verify it independently before integrating it with the complete SoC.
 
-Before writing any RTL. You need to understand the problem and consider possible implementations. You need to think about how much data your HW accelerator will buffer internally, how pixels are accessed from the memory, and how many times the same pixel is read from memory during the processing of an image frame. In this process, you may also try to estimate bounds on the time it takes to process an image. A lower bound can be established by calculating the time it takes your design to read from and write to the memory. You may be able to think of other bounds and estimates that characterize your design. To keep the size of the design manageable, you may ignore the boundary conditions and simply produce an image that is smaller than the original (missing the left and right columns of pixels and the upper and lower rows of pixels).
+#### Architecture and datapath design
 
-Draw a block diagram showing the datapath you have designed and develop an ASMD-chart specification of your design.
+Before writing RTL, understand the problem and consider possible implementations. Think about how much data your HW accelerator will buffer internally, how pixels are accessed from the input buffer, and how many times the same pixel is read while processing an image frame. You may also estimate bounds on the time it takes to process an image. A lower bound can be established from the number of input-buffer reads and output-buffer writes required by your design. Other estimates may also help characterize your architecture.
 
-#### RTL design
+To keep the size of the design manageable, you may ignore the boundary conditions and simply produce an image that is smaller than the original (missing the left and right columns of pixels and the upper and lower rows of pixels).
 
-Implement your accelerator in [pixel_acc.sv](../src/rtl/pixel_acc.sv) - this is the FSM submodule that currently does pixel inversion. Its interface is a `start` pulse, a 1-cycle-latency read port from the input buffer (`ibuf_rd_en` / `ibuf_rd_addr` -> `ibuf_rd_data`), a write port into the output buffer (`obuf_wr_en` / `obuf_wr_addr` / `obuf_wr_data`), and a `finish` pulse you assert once the last output word is written. Each 32-bit word packs 4 pixels little-endian. Read the header comments in `pixel_acc.sv` and [Student_area_0.sv](../src/rtl/Student_area_0.sv) for the exact timing and buffer layout or run Questa in GUI mode and analyse the waveforms. You should not need to change `Student_area_0.sv` (the APB/CSR wrapper) unless you alter the buffer geometry or module parameters.
+Draw a block diagram showing the datapath you have designed and develop an ASMD-chart specification of your design. These should make clear how pixels are buffered, how the 3x3 neighborhood is formed, how the Sobel calculation is performed, and how the controller sequences the operations.
 
-Test with the same standalone flow as Task 0:
+#### RTL implementation
+
+Implement your accelerator in [pixel_acc.sv](../src/rtl/pixel_acc.sv). This is the FSM submodule that currently performs pixel inversion.
+
+Its interface is a `start` pulse, a 1-cycle-latency read port from the input buffer (`ibuf_rd_en` / `ibuf_rd_addr` -> `ibuf_rd_data`), a write port into the output buffer (`obuf_wr_en` / `obuf_wr_addr` / `obuf_wr_data`), and a `finish` pulse that you assert once the last output word is written. Each 32-bit word packs four 8-bit pixels little-endian.
+
+Read the header comments in `pixel_acc.sv` and [Student_area_0.sv](../src/rtl/Student_area_0.sv) for the exact timing and buffer layout. You can also use the Questa GUI to inspect the working pixel-inversion example before replacing it. You should not need to change `Student_area_0.sv` (the APB/CSR wrapper) unless you deliberately change the buffer geometry or module parameters.
+
+#### Standalone verification
+
+Use the same standalone testbench and flow as in Task 0:
 
 ```bash
 make test_ss        # batch
 make test_ss_gui    # with waveforms
 ```
 
-Check the result in `src/tb/out_images/` - it should show bright edges on a dark
-background. The testbench does not do strict per-pixel checking, so minor border
-differences between implementations are fine. Verify your design here before
-moving to system integration.
+The testbench is `src/tb/tb_student_ss.sv`. It writes a PGM image into the input buffer over APB, starts your accelerator, waits for `DONE`, and reads the output buffer back into `src/tb/out_images/`.
+
+Check the resulting image - it should show bright edges on a dark background. The testbench does not do strict per-pixel checking, so minor border differences between valid implementations are fine.
+
+**Success criteria:** your architecture and ASMD/datapath design are complete, the RTL in `pixel_acc.sv` runs to completion in the standalone testbench without errors, `finish` is asserted correctly, and the generated PGM image shows the expected edge-detection result. Complete this task before proceeding to Task 2.
 
 
-### 2.  Integrate the Accelerator into the SoC
+### Task 2: Integrate the Accelerator into the SoC
 
-Once your RTL passes the standalone testbench, run it on the whole system. Your edge detector uses the same CSR / ibuf / obuf protocol as the pixel-inversion example, so the provided CPU firmware drives it unchanged - this task is just re-running the full SoC simulation with your RTL in place. You are not expected to modify any C code here.
+**Purpose.** Verify that the accelerator you completed in Task 1 works correctly when driven by the real RISC-V CPU through the complete Didactic-SoC.
+
+Once your RTL passes the standalone testbench, run it on the whole system. Your edge detector uses the same CSR / ibuf / obuf protocol as the pixel-inversion example, so the provided CPU firmware drives it unchanged. You are not expected to modify any C code here.
 
 The goal is to confirm that, driven by the real CPU firmware, your accelerator reads pixels from ibuf, writes processed pixels to obuf, and asserts `finish` in the way the SoC expects.
 
-The system testbench is `src/tb/tb_didactic_V1.sv`. It replicates the real FPGA test: image data arrives over UART from a "PC", the CPU moves it into the accelerator, the accelerator processes it, and the result comes back. The testbench plays the PC side of the UART link via two tasks, `uart_write_byte` and `uart_receive_byte`.
+The system testbench is `src/tb/tb_didactic_V1.sv`. It follows the same overall data path as the real FPGA test: image data arrives over UART from a simulated "PC", the CPU moves it into the accelerator, and the accelerator processes it. The testbench contains UART helper tasks, including `uart_write_byte` and `uart_receive_byte`.
 
-Two shortcuts keep the run fast: a simplified UART model is used instead of the real peripheral, and the processed image is read straight from the accelerator output buffer instead of being streamed all the way back over UART.
+Two shortcuts keep the run fast: the UART timing is simplified, and the processed image is read straight from the accelerator output buffer instead of being streamed all the way back over UART. The FPGA test in Tasks 3 and 4 performs the complete end-to-end UART round trip.
 
-**Task: skim `src/tb/tb_didactic_V1.sv`** so you know what the simulation is doing.
+Inspect `src/tb/tb_didactic_V1.sv` so you know what the simulation is doing.
 
-**Task: skim the CPU firmware [pixel_inversion.c](../sw/pixel_inversion/pixel_inversion.c).** Its flow is:
+Also inspect the CPU firmware [pixel_inversion.c](../sw/pixel_inversion/pixel_inversion.c). Its flow is:
 
 1. initialise student subsystem 0 (`ss_init(0)`) and the UART peripheral,
 2. set the ibuf address pointer to 0,
@@ -217,7 +238,7 @@ make test_all_gui TEST=pixel_inversion   # with waveforms + memory viewer
 
 Expect roughly 18 minutes in batch mode (longer with the GUI). The test transfers 101376 bytes (352x288 pixels) at 20 cycles per byte -> about 2.03e6 cycles, or 20.3 ms of simulated time at 100 MHz.
 
-> **Note**: While debugging, it is faster to start the GUI run and stop it early to inspect the ibuf and obuf contents. Run it to completion at least once, though, to confirm the processed image makes it back to the SoC. If you are unsure what correct behaviour looks like, clone a clean copy of the repo and run the default pixel-inversion design as a reference.
+> **Note**: While debugging, it is faster to start the GUI run and stop it early to inspect the ibuf and obuf contents. Run it to completion at least once, though, to confirm that the complete SoC processes the image correctly. If you are unsure what correct behaviour looks like, clone a clean copy of the repo and run the default pixel-inversion design as a reference.
 
 **Success criteria:** the simulation runs to completion with no errors, and `src/tb/out_images/pattern_result.pgm` appears and matches the result your standalone testbench produced.
 
@@ -228,9 +249,11 @@ If you want a clean run - remove build files with:
 make clean_build
 ```
 
-### 3.  FPGA Implementation
+### Task 3: FPGA Implementation
 
-Now run the design on real hardware: a **Digilent Nexys A7** board driven from a PC over UART. End to end: the PC sends a 352x288 image to the FPGA over UART, the CPU writes the pixels into the accelerator input buffer, the accelerator processes the frame, and the CPU sends the result back over UART to the PC.
+**Purpose.** Synthesize and implement your completed SoC design, generate a bitstream, and program a **Digilent Nexys A7** (or **Digilent Nexys4DDR**) board.
+
+The complete hardware flow will later be tested from a PC over UART: the PC sends a 352x288 image to the FPGA, the CPU writes the pixels into the accelerator input buffer, the accelerator processes the frame, and the CPU sends the result back over UART to the PC. No additional RTL changes should normally be needed in this task; use the accelerator verified in Tasks 1 and 2.
 
 > **Important**. Unlike the earlier tasks, all commands in this section run from the **`fpga/`** directory, not the project root.
 
@@ -262,13 +285,19 @@ The bitstream carries the instruction-memory contents, so the CPU program starts
 
 The **rightmost slide switch** (SW0, FPGA pin `J15`) is wired to the SoC reset - up means reset inactive, down means reset active. Toggle it to restart the CPU from the beginning of the program.
 
-### 4. Test with the serial interface GUI
+**Success criteria:** Vivado completes synthesis and implementation, a `.bit` file is generated, and the Nexys A7 can be programmed successfully. The functional end-to-end image test is Task 4.
+
+### Task 4: Test with the Serial Interface GUI
+
+**Purpose.** Perform the complete PC-to-SoC-to-accelerator-to-PC image round trip on the FPGA and confirm that your hardware produces the expected edge-detected image.
 
 The GUI in `fpga/serial_interface/` sends a PGM to the board and reads the processed image back. It accepts **P2-type PGM images that are exactly 352x288 pixels**.
 
 **Windows:** run the bundled executable `fpga/serial_interface/Serial interface.exe` - no Python needed.
 
 **Linux:** run the Python script. It depends on `appJar`, which is sensitive to the Python version; this was set up against **Python 3.12**.
+
+From the project root, run:
 
 ```bash
 cd fpga/serial_interface
@@ -288,10 +317,14 @@ On Linux also install Tk, which pip cannot provide: `sudo apt install python3-tk
 
 Compare the uploaded image against the input to confirm your accelerator ran on hardware.
 
+**Success criteria:** the GUI can communicate with the board at 38400 baud, download a valid 352x288 P2 PGM image, upload the processed image, and the returned image shows the expected edge-detection result.
 
-### 5. Program and debug over JTAG (Optional)
 
-JTAG lets you reload firmware and step through code on the running SoC without rebuilding the bitstream. OpenOCD bridges GDB and the board's JTAG; GDB then talks to the CPU's debug module.
+### Task 5 (Optional): Program and Debug over JTAG
+
+**Purpose.** Use JTAG for optional low-level software/debug work without rebuilding the FPGA bitstream each time.
+
+JTAG lets you reload firmware and debug code on the running SoC without rebuilding the bitstream. OpenOCD bridges GDB and the board's JTAG; GDB then talks to the CPU's debug module.
 
 **Prerequisites:** OpenOCD and gdb-multiarch installed (setup guide section 7), the bitstream already flashed (Task 3 - the debug module only exists once the FPGA is configured), and the FPGA firmware built (`make build_test` in `fpga/`). All commands below run from `fpga/`.
 
@@ -336,7 +369,7 @@ continue
 # Use Ctrl+C to halt target
 ```
 
-`0x01000080` is the firmware entry point (IMEM base `0x01000000` + `crt0` offset.
+`0x01000080` is the firmware entry point (IMEM base `0x01000000` + `crt0` offset).
 
 > A hard reset with the board's reset switch (rightmost slide switch, SW0 / pin `J15`) also starts the newly uploaded firmware, as long as it was loaded in the same power cycle. This can be more reliable than reset through JTAG.
 
@@ -355,10 +388,14 @@ continue
 
 **Other useful commands:** `Ctrl+C` halts a running target; `monitor halt` / `monitor resume` control it via OpenOCD; `info registers` dumps the register file.
 
+**Success criteria:** OpenOCD connects to the configured FPGA, GDB attaches to the RISC-V core, and you can load the firmware and halt/resume execution. Please note that this task is optional and is not required to complete the assignment.
 
-### 6. Further improvements
+### Task 6 (Optional): Further improvements
 
-Nothing in this section is expected during the course - the lab is complete without it. It is here for those who found the SoC interesting and want to keep exploring it on their own. Both ideas attack the same weakness of the current design: the CPU spends nearly all of its time copying data one word at a time, so the accelerator sits idle far longer than it computes.
+The following improvements are optional, and the assignment can be completed without them. However, you are encouraged to consider them if you have time, as they provide useful opportunities to improve the quality, completeness, or performance of your design.
 
-- **Pipeline the transfers.** Today the CPU fills the entire input buffer before it starts the accelerator, and the accelerator finishes processing the entire frame before the CPU reads anything back. Overlap (pipeline) these stages instead: start the accelerator as soon as enough rows are in ibuf for it to make progress, and stream processed pixels out of obuf to UART as they become available, rather than waiting for `DONE`. Note that this changes the CSR handshake - you need a way to tell the accelerator how far the CPU has written, and the CPU how far the accelerator has processed.
-- **Direct memory access (hard).** Another option to speed up the transaction is DMA. The CPU currently does nothing but shuttle data: every pixel costs a load from UART and a store to the accelerator, one word at a time over APB. An accelerator should not only compute faster than the CPU, it should also free the CPU for other work. A [DMA controller](https://en.wikipedia.org/wiki/Direct_memory_access) moves data between peripherals without the CPU in the loop. One could design a DMA controller, attach it to the bus, and let the CPU set up a transfer and then wait on completion instead of copying each word itself.
+- **Boundary conditions.** In the basic implementation, you may ignore the boundary pixels and produce an output image that is smaller than the original. As explained in the assignment, you can instead handle the image boundaries explicitly, for example by mirroring pixels at the edges and corners. This allows the Sobel operator to produce an output value for every pixel in the image.
+
+- **Pipeline the transfers.** Today the CPU fills the entire input buffer before it starts the accelerator, and the accelerator finishes processing the entire frame before the CPU reads anything back. You can improve the overall throughput by overlapping these stages. For example, the accelerator could start as soon as enough rows have been written to the input buffer, while processed pixels could be transferred from the output buffer to the UART before the entire frame has been completed. Note that this requires changes to the CSR handshake, since the CPU and accelerator must keep track of how much data has been written and processed.
+
+- **Direct memory access (hard).** Another way to improve performance is to reduce the amount of data movement performed directly by the CPU. At present, the CPU transfers the image data one word at a time between the UART and the accelerator over APB. A [DMA controller](https://en.wikipedia.org/wiki/Direct_memory_access) can move data between peripherals without requiring the CPU to perform each individual transfer. As a more advanced extension, you could design a DMA controller, connect it to the system, and let the CPU configure a transfer and wait for its completion instead of copying every word itself.

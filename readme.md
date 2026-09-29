@@ -10,21 +10,22 @@ It is licensed under the Solderpad Hardware License v2.1 (see [LICENSE](LICENSE)
 
 ## Start here
 
-Two documents cover everything you need for the lab:
+Togheter with the **Assignment 2 PDF** available on DTU-Learn, the following two documents cover everything you need for the lab:
 
 1. **[doc/02203_Software_setup.md](doc/02203_Software_setup.md)** - install and
    verify the tools.
 2. **[doc/02203_Lab_Guide.md](doc/02203_Lab_Guide.md)** - the lab itself: the SoC
-   in brief, the accelerator interface, and the tasks from first simulation
+   in brief, the accelerator interface, and the tasks you need to carry out from first simulation
    through to running on the board.
 
 Everything else in [doc/](doc/) is background reference - useful if you are
-curious, not required to finish the lab.
+curious, but not required to finish the lab.
 [the-didactic-soc-platform.md](doc/the-didactic-soc-platform.md) is the one worth
 knowing about: it holds the full memory map and register listing.
 
-Run all `make` commands from this directory (the project root). On Windows, use
-`make -f Makefile.win` instead of `make`.
+Unless the Lab Guide explicitly says otherwise, run `make` commands from this
+directory (the project root). On Windows, use `make -f Makefile.win` instead of
+`make`.
 
 ## Directory structure
 
@@ -64,4 +65,6 @@ Then the flows used throughout the lab:
 | `make test_all TEST=pixel_inversion` | Simulate the whole SoC running the firmware |
 | `make clean_build` | Remove build outputs |
 
-The lab guide explains what each of these does and when you need it.
+The Lab Guide explains what each command does and when you need it. (FPGA
+synthesis, programming, serial testing, and optional JTAG debugging are covered
+there separately; the FPGA `make` commands are run from `fpga/`.)

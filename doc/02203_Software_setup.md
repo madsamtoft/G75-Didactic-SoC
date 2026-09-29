@@ -248,13 +248,13 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 #### Step 2 - Install OpenOCD and GDB (inside MSYS2 MINGW64)
 
 ```bash
-pacman -S mingw-w64-x86_64-openocd mingw-w64-x86_64-riscv64-unknown-elf-gdb
+pacman -S mingw-w64-x86_64-openocd mingw-w64-x86_64-gdb-multiarch
 ```
 
 Verify:
 ```bash
 openocd --version
-riscv64-unknown-elf-gdb --version
+gdb-multiarch --version
 ```
 
 #### Step 3 - Zadig for switching out the FTDI driver

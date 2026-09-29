@@ -9,7 +9,7 @@
 | 5 | Bender | Hardware dependency manager (fetches the open-source IP) |
 | 6 | Vivado | FPGA synthesis and implementation |
 | 7 | Python 3 | For the PC side of the FPGA test. Packages: `pyserial`, `Pillow`, `appJar`, `python3-tk` |
-| 8 | OpenOCD (Optional) | JTAG debugging |
+| 8 | OpenOCD and GDB (Optional) | JTAG debugging |
 
 ## Software setup guide
 
@@ -187,7 +187,7 @@ Project home: <https://github.com/pulp-platform/bender>.
 
 ### 6. Vivado
 
-See installation guide on DTU Learn.
+See installation guide on DTU Learn. (You should alredy have Vivado installed from the 1st assignment.)
 
 <!-- 1. Download the **Vivado ML Edition** installer (Linux `.bin`) from the [AMD downloads page](https://www.xilinx.com/support/download.html). Select the latest 2024.x release and choose *AMD Unified Installer for FPGAs & Adaptive SoCs*.
 

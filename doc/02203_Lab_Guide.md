@@ -212,7 +212,7 @@ The goal is to confirm that, driven by the real CPU firmware, your accelerator r
 
 The system testbench is `src/tb/tb_didactic_V1.sv`. It follows the same overall data path as the real FPGA test: image data arrives over UART from a simulated "PC", the CPU moves it into the accelerator, and the accelerator processes it. The testbench contains UART helper tasks, including `uart_write_byte` and `uart_receive_byte`.
 
-Two shortcuts keep the run fast: the UART timing is simplified, and the processed image is read straight from the accelerator output buffer instead of being streamed all the way back over UART. The FPGA test in Tasks 3 and 4 performs the complete end-to-end UART round trip.
+Two shortcuts keep the run fast: the UART peripheral is switched out for a simplified model (the simplified model can be found in src\tb\apb_uart_sim.sv), and the processed image is read straight from the accelerator output buffer instead of being streamed all the way back over UART. The FPGA test in Tasks 3 and 4 performs the complete end-to-end UART round trip.
 
 Inspect `src/tb/tb_didactic_V1.sv` so you know what the simulation is doing.
 

@@ -103,7 +103,7 @@ First time using Questa? Glance over the [Questa Quick-Start Guide](https://docs
 ### 3. WSL2 (Windows only)
 
 WSL2 provides the Linux environment used to run the RISC-V cross-compiler
-(Section 4) and Bender dependency manager (Section 5). Skip this section on Linux.
+(Section 4) and Bender dependency manager (Section 5). Skip this section if you already have a WSL. Skip this section on Linux.
 
 <!-- **Requirements:** Windows 10 21H2+ or Windows 11, administrator rights, and
 hardware virtualization enabled in the BIOS/UEFI (Intel VT-x / AMD-V). Most
@@ -231,6 +231,8 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 ``` -->
 
 **Windows:**
+
+On Windows we use MSYS2 instead of WSL for the debug tools. WSL can only reach USB devices through `usbipd`, which adds a small delay to every USB transfer. OpenOCD makes thousands of these transfers, so loading a program becomes very slow and unreliable.
 
 #### Step 1 - Install MSYS2
 

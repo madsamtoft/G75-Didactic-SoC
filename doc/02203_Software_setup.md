@@ -88,9 +88,9 @@ Questa Starter Edition is a free HDL simulator used in this lab.
    - **Linux:** run `ip link`; the wired interface is `en*` / `eth*`, wireless is
      `wl*`.
 4. You will receive a `.dat` license file by email.
-5. Point Questa at it via the `SALT_LICENSE_FILE` environment variable (adjust path to your saved location):
-   - **Windows:** `setx SALT_LICENSE_FILE "C:\licenses\questa.dat"` (or use System Properties -> Environment Variables)
-   - **Linux:** `export SALT_LICENSE_FILE=$HOME/licenses/questa.dat` in `~/.bashrc`
+5. Point Questa at it via the `SALT_LICENSE_SERVER` environment variable (adjust path to your saved location):
+   - **Windows:** `setx SALT_LICENSE_SERVER "C:\licenses\questa.dat"` (or use System Properties -> Environment Variables)
+   - **Linux:** `export SALT_LICENSE_SERVER=$HOME/licenses/questa.dat` in `~/.bashrc`
 
 #### Verify
 

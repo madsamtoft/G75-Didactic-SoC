@@ -12,6 +12,8 @@ VIVADO ?= vivado
 export TEST   ?= blink
 export BUILD_DIR ?= $(CURDIR)/../build
 export PROJECT   ?= nexys_a7
+# Accelerator language (sv | vhdl), read by scripts/run_xilinx.tcl
+export ACC_LANG  ?= sv
 
 check_env:
 	if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
@@ -38,7 +40,7 @@ build_test: check_env
 # usbipd_detach:
 # 	usbipd detach --hardware-id 0403:6010
 
-# # Run OpenOCD inside WSL (blocking — open a second terminal for load_elf).
+# # Run OpenOCD inside WSL (blocking - open a second terminal for load_elf).
 # start_openocd:
 # 	$(WSL) sudo openocd -d2 -f $(shell $(WSL) wslpath '$(CURDIR)')/utils/openocd-didactic-nexys.cfg
 

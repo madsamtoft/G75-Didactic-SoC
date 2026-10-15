@@ -14,10 +14,14 @@ FAST_UART      ?= 1
 SIM_UART_MODEL ?= 1
 BYPASS_UART    ?= 0
 GUI            ?= -c
+ACC_LANG       ?= sv
+START_TIME     := $(shell powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-dd_HH-mm'")
 
 # Single delegation point: all Questa targets call $(QUESTA) <target>
 QUESTA = $(MAKE) -f Makefile \
 	BUILD_DIR=$(BUILD_DIR_FWD) \
+	START_TIME=$(START_TIME) \
+	ACC_LANG=$(ACC_LANG) \
 	TESTCASE=$(TESTCASE) \
 	SANITY_CHECK=$(SANITY_CHECK) \
 	FAST_UART=$(FAST_UART) \
@@ -36,7 +40,7 @@ env:
 	if not exist "stdout\uart" type nul > stdout\uart
 
 # ============================================================
-# Questa targets — delegate to Makefile
+# Questa targets - delegate to Makefile
 # ============================================================
 compile: env
 	$(QUESTA) compile_didactic

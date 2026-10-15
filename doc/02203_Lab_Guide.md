@@ -112,6 +112,10 @@ The steps below exercise the tools you installed: Bender (fetches the hardware d
 
 For this task, inspect the provided `src/rtl/Student_area_0.sv`, `src/rtl/pixel_acc.sv`, `src/tb/tb_student_ss.sv`, and `sw/pixel_inversion/pixel_inversion.c`. You should not need to edit them.
 
+A VHDL version of the accelerator is provided in [pixel_acc_vhd.vhd](../src/rtl/pixel_acc_vhd.vhd). If you prefer VHDL, implement your accelerator there instead of in `pixel_acc.sv`; the rest of the project stays in SystemVerilog, connected through `pixel_acc_vhd_wrapper.sv`.
+
+> **VHDL note:** add `ACC_LANG=vhdl` to every `make` command (e.g. `make test_ss ACC_LANG=vhdl`), or set it once per terminal: `export ACC_LANG=vhdl` (Linux), `$env:ACC_LANG="vhdl"` (PowerShell). If you forget, the SystemVerilog example runs instead and the simulation still passes. Check the sim log (`build/logs/sim`) for `Loading work.pixel_acc_vhd(rtl)`. In GUI runs, save your waveform layout to `sim/wave_ss_vhdl.do`.`
+
 Run all commands from the project root, `02203-Didactic-SoC/`.
 
 > **Windows:** replace `make` with `make -f Makefile.win` for every command in this guide.

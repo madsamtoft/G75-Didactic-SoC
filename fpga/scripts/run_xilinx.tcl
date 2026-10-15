@@ -54,6 +54,25 @@ set src_files [split [string trim [read $fp]] "\n"]
 close $fp
 add_files -norecurse -scan_for_includes $src_files
 
+# Handle VHDL and SV versions of pixel_acc
+if { [info exists ::env(ACC_LANG)] } {
+  set ACC_LANG $::env(ACC_LANG)
+} else {
+  # Default to SV if variable is undefined
+  set ACC_LANG sv
+}
+if { $ACC_LANG eq "vhdl" } {
+  add_files -norecurse $DIR/../src/rtl/pixel_acc_vhd_wrapper.sv
+  add_files -norecurse $DIR/../src/rtl/pixel_acc_vhd.vhd
+  set_property file_type {VHDL 2008} [get_files pixel_acc_vhd.vhd]
+} elseif { $ACC_LANG eq "sv" } {
+  add_files -norecurse $DIR/../src/rtl/pixel_acc.sv
+} else {
+  puts "ERROR: ACC_LANG must be 'sv' or 'vhdl', got '$ACC_LANG'"
+  exit 1
+}
+puts "INFO: pixel_acc language -> $ACC_LANG"
+
 if { $PROJECT eq "z1" } {
   add_files -norecurse $DIR/rtl/DidacticZ1.v
 }

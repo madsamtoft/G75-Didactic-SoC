@@ -12,6 +12,8 @@ export TEST ?= pixel_inversion
 
 export BUILD_DIR ?= ../build
 export PROJECT ?= nexys_a7
+# Accelerator language (sv | vhdl), read by scripts/run_xilinx.tcl
+export ACC_LANG ?= sv
 
 check_env:
 	mkdir -p $(BUILD_DIR)

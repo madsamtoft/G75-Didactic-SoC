@@ -17,3 +17,4 @@ Bender.lock
 
 src/tb/out_images/*
 fpga/serial_interface/.venv
+fpga/dfx_runtime.txt

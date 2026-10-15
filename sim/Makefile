@@ -10,7 +10,9 @@
 ###############################################
 
 BUILD_DIR ?= $(realpath $(CURDIR))/../build
-START_TIME=`date +%F_%H:%M`
+ifndef START_TIME
+START_TIME := $(shell date +%F_%H-%M)
+endif
 SHELL = bash
 
 DUT = tb_didactic
@@ -64,6 +66,20 @@ VLOG_OPTS = \
 FLIST      = flist.f
 INCLUDES_F = includes.f
 
+# Handle VHDL and SV versions of pixel_acc
+ACC_LANG ?= sv
+ifeq ($(ACC_LANG),sv)
+PIXEL_ACC_SV  = ../src/rtl/pixel_acc.sv
+WAVE_SS       = wave_ss.do
+else ifeq ($(ACC_LANG),vhdl)
+PIXEL_ACC_SV  = ../src/rtl/pixel_acc_vhd_wrapper.sv
+PIXEL_ACC_VHD = ../src/rtl/pixel_acc_vhd.vhd
+WAVE_SS       = wave_ss_vhdl.do
+else
+$(error ACC_LANG must be 'sv' or 'vhdl', got '$(ACC_LANG)')
+endif
+VCOM_OPTS = -2008
+
 # ============================================================
 # File-list generation (file lists included in repo)
 # Requires: bender on PATH
@@ -107,8 +123,12 @@ SIM_UART_MODEL ?= 0
 compile_didactic:
 	vlib $(BUILD_DIR)/didactic_lib
 	vmap didactic_lib $(BUILD_DIR)/didactic_lib
+ifeq ($(ACC_LANG),vhdl)
+	vcom -work didactic_lib $(VCOM_OPTS) $(PIXEL_ACC_VHD) \
+	-l $(BUILD_DIR)/logs/compile/$(START_TIME)_didactic_vhdl.log
+endif
 	vlog -sv -work didactic_lib $(DUT_DEFINES) $(TB_DEFINES) $(DUT_LIBS) \
-	$(VLOG_OPTS) -f $(FLIST) -f $(INCLUDES_F) -l $(BUILD_DIR)/logs/compile/$(START_TIME)_didactic.log
+	$(VLOG_OPTS) -f $(FLIST) $(PIXEL_ACC_SV) -f $(INCLUDES_F) -l $(BUILD_DIR)/logs/compile/$(START_TIME)_didactic.log
 ifeq ($(SIM_UART_MODEL),1)
 	@echo "[sim] Compiling fast behavioral UART model (overrides apb_uart)"
 	vlog -sv -work didactic_lib $(VLOG_OPTS) \
@@ -160,11 +180,15 @@ run_sim: library_mapping
 #============================================================
 
 SS_TB = tb_student_ss
-SS_TB_SRC = ../src/tb/tb_student_ss.sv ../src/rtl/Student_area_0.sv ../src/rtl/pixel_acc.sv
+SS_TB_SRC = ../src/tb/tb_student_ss.sv ../src/rtl/Student_area_0.sv $(PIXEL_ACC_SV)
 
 compile_ss:
 	vlib $(BUILD_DIR)/didactic_lib
 	vmap didactic_lib $(BUILD_DIR)/didactic_lib
+ifeq ($(ACC_LANG),vhdl)
+	vcom -work didactic_lib $(VCOM_OPTS) $(PIXEL_ACC_VHD) \
+	-l $(BUILD_DIR)/logs/compile/$(START_TIME)_ss_vhdl.log
+endif
 	vlog -sv -work didactic_lib $(VLOG_OPTS) $(SS_TB_SRC) \
 	-l $(BUILD_DIR)/logs/compile/$(START_TIME)_ss.log
 
@@ -181,7 +205,7 @@ run_ss: library_mapping
 	$(DUT_LIBS) $(VSIM_OPTS) \
 	-work $(BUILD_DIR)/didactic_lib \
 	$(SS_TB)_opt \
-	$(if $(filter -c,$(GUI)),-do "run -all;",-do "do wave_ss.do; run -all;") \
+	$(if $(filter -c,$(GUI)),-do "run -all;",-do "do $(WAVE_SS); run -all;") \
 	-l $(BUILD_DIR)/logs/sim/$(START_TIME)_ss_sim.log
 
 sim_ss: compile_ss elaborate_ss run_ss

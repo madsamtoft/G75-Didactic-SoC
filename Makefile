@@ -16,6 +16,8 @@
 SHELL=bash
 BUILD_DIR ?= $(realpath $(CURDIR))/build/
 TEST ?= blink
+# Accelerator language: sv (src/rtl/pixel_acc.sv) or vhdl (src/rtl/pixel_acc_vhd.vhd)
+ACC_LANG ?= sv
 
 
 # Fetch submodule revisions and 
@@ -53,7 +55,7 @@ soc-rtl:
 
 # compile hw library with chosen tools
 compile: check-env
-	$(MAKE) -C sim compile BUILD_DIR=$(BUILD_DIR)
+	$(MAKE) -C sim compile BUILD_DIR=$(BUILD_DIR) ACC_LANG=$(ACC_LANG)
 
 # potentionally elaborate hw library with chosen tools
 elaborate: check-env
@@ -92,17 +94,17 @@ test_all_gui: check-env compile elaborate build_test
 	$(MAKE) -C sim run_sim BUILD_DIR=$(BUILD_DIR) GUI=""
 
 test_ss: check-env
-	$(MAKE) -C sim sim_ss BUILD_DIR=$(BUILD_DIR)
+	$(MAKE) -C sim sim_ss BUILD_DIR=$(BUILD_DIR) ACC_LANG=$(ACC_LANG)
 
 test_ss_gui: check-env
-	$(MAKE) -C sim sim_ss BUILD_DIR=$(BUILD_DIR) GUI=""
+	$(MAKE) -C sim sim_ss BUILD_DIR=$(BUILD_DIR) ACC_LANG=$(ACC_LANG) GUI=""
 
 ######################################################################
 # fpga targets
 ######################################################################
 
 fpga: check-env
-	$(MAKE) -C fpga all_xilinx BUILD_DIR=$(BUILD_DIR)
+	$(MAKE) -C fpga all_xilinx BUILD_DIR=$(BUILD_DIR) ACC_LANG=$(ACC_LANG)
 
 ######################################################################
 # verilator targets

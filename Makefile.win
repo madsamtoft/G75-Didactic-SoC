@@ -80,3 +80,11 @@ test_ss_gui: check-env
 
 fpga: check-env
 	$(MAKE) -f Makefile.win -C fpga -f Makefile.win all_xilinx BUILD_DIR=$(BUILD_DIR) ACC_LANG=$(ACC_LANG)
+
+.PHONY: syn
+syn: check-env
+	$(MAKE) -C fpga -f Makefile.win synth_xilinx BUILD_DIR="$(BUILD_DIR)" ACC_LANG=$(ACC_LANG)
+
+.PHONY: vivado-check
+vivado-check:
+	$(MAKE) -C fpga -f Makefile.win vivado-check BUILD_DIR="$(BUILD_DIR)" ACC_LANG=$(ACC_LANG)

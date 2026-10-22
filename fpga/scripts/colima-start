@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Explicit startup only: never create a profile or resize an existing VM.
+set -euo pipefail
+[[ "$(uname -s)" == Darwin ]] || { echo 'Colima startup is only used on macOS.' >&2; exit 2; }
+profile="${FPGA_COLIMA_PROFILE:-vivado}"
+config="${COLIMA_HOME:-$HOME/.colima}/$profile/colima.yaml"
+command -v colima >/dev/null || { echo 'Colima is missing.' >&2; exit 3; }
+if [[ ! -f "$config" ]]; then
+    echo "Existing Colima configuration not found: $config. See fpga/docker/README.md for initial setup." >&2
+    exit 3
+fi
+if colima status --profile "$profile" >/dev/null 2>&1; then
+    echo "Colima profile $profile is already running."
+else
+    # No resource flags: preserve the saved CPU, memory, disk and mount settings.
+    exec colima start --profile "$profile" --activate=false
+fi

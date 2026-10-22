@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Native on Linux; reuse the installed reference runtime on macOS.
+set -euo pipefail
+runtime="${FPGA_RUNTIME:-auto}"
+if [[ "$runtime" == auto ]]; then
+    if [[ "$(uname -s)" == Darwin ]]; then runtime=docker; else runtime=native; fi
+fi
+case "$runtime" in
+    native) exec "${VIVADO_NATIVE:-vivado}" "$@" ;;
+    docker) ;;
+    *) echo "Invalid FPGA_RUNTIME: $runtime (use auto, native or docker)" >&2; exit 2 ;;
+esac
+
+for ((index=1; index <= $#; index++)); do
+    if [[ "${!index}" == -mode ]]; then
+        next=$((index + 1))
+        if [[ "${!next:-}" == gui ]]; then
+            echo 'Vivado GUI is unavailable in the headless Colima runtime. Use make vivado-check or make all_xilinx.' >&2
+            exit 2
+        fi
+    fi
+done
+
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+work_dir="$(pwd -P)"
+case "$work_dir/" in
+    "$repo_root/"*) ;;
+    *) echo 'Invoke Vivado from inside this repository.' >&2; exit 2 ;;
+esac
+context="${FPGA_DOCKER_CONTEXT:-colima-${FPGA_COLIMA_PROFILE:-vivado}}"
+image="${FPGA_DOCKER_IMAGE:-vivado-runtime:2026.1-rosetta}"
+install_volume="${FPGA_DOCKER_INSTALL_VOLUME:-vivado-2026.1}"
+user_volume="${FPGA_DOCKER_USER_VOLUME:-vivado-2026.1-user}"
+license_file="${FPGA_LICENSE_FILE:-$HOME/.licenses/xilinx/Xilinx.lic}"
+command -v docker >/dev/null || { echo 'Docker CLI is missing.' >&2; exit 3; }
+docker_cmd=(docker --context "$context")
+if ! "${docker_cmd[@]}" info >/dev/null 2>&1; then
+    echo "Docker context $context is unavailable. Run make vivado-start to start the existing Colima profile." >&2
+    exit 3
+fi
+"${docker_cmd[@]}" image inspect "$image" >/dev/null || exit 3
+for volume in "$install_volume" "$user_volume"; do
+    # Inspect first: docker run must never silently create empty install volumes.
+    "${docker_cmd[@]}" volume inspect "$volume" >/dev/null || exit 3
+done
+[[ -f "$license_file" ]] || { echo "Vivado license missing: $license_file (set FPGA_LICENSE_FILE)." >&2; exit 3; }
+license_file="$(cd -- "$(dirname -- "$license_file")" && pwd -P)/$(basename -- "$license_file")"
+
+# Identical host/container paths preserve absolute arguments, relative file lists
+# and Tcl paths without rewriting arbitrary command strings. --mount rejects
+# missing host paths instead of silently creating directories in the VM.
+mounts=(--mount "type=bind,source=$repo_root,target=$repo_root")
+env_args=()
+if [[ -n "${BUILD_DIR:-}" ]]; then
+    mkdir -p -- "$BUILD_DIR"
+    BUILD_DIR="$(cd -- "$BUILD_DIR" && pwd -P)"
+    case "$BUILD_DIR/" in
+        "$repo_root/"*) ;;
+        *) mounts+=(--mount "type=bind,source=$BUILD_DIR,target=$BUILD_DIR") ;;
+    esac
+    env_args+=(-e "BUILD_DIR=$BUILD_DIR")
+fi
+for name in PROJECT ACC_LANG TEST; do
+    if [[ -n "${!name:-}" ]]; then env_args+=(-e "$name=${!name}"); fi
+done
+
+# Retain root and /root/.Xilinx from the working reference image. Colima's
+# writable host share maps writes back to the macOS user (checked by smoke test).
+exec "${docker_cmd[@]}" run --rm --pull never --platform linux/amd64 \
+    --mac-address "${FPGA_DOCKER_MAC_ADDRESS:-02:42:ac:11:00:02}" \
+    -e XILINXD_LICENSE_FILE=/licenses/Xilinx.lic \
+    -e "FPGA_DOCKER_SETTINGS=${FPGA_DOCKER_SETTINGS:-/opt/Xilinx/2026.1/Vivado/settings64.sh}" \
+    "${env_args[@]}" \
+    --mount "type=bind,source=$license_file,target=/licenses/Xilinx.lic,readonly" \
+    --mount "type=volume,source=$install_volume,target=/opt/Xilinx" \
+    --mount "type=volume,source=$user_volume,target=/root/.Xilinx" \
+    "${mounts[@]}" --workdir "$work_dir" "$image" \
+    bash -lc 'set -e; test -r "$FPGA_DOCKER_SETTINGS" || { echo "Vivado settings not readable: $FPGA_DOCKER_SETTINGS" >&2; exit 4; }; source "$FPGA_DOCKER_SETTINGS"; export LD_PRELOAD=/opt/udev_stub.so; export LD_LIBRARY_PATH=/opt/udev-stub:${LD_LIBRARY_PATH:-}; exec vivado "$@"' -- "$@"

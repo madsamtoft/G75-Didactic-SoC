@@ -7,6 +7,15 @@
 #   -Dovydas Liutkus (dovli@dtu.dk)
 ####
 
+# Optional synthesis-only entry point; the existing default is the full flow.
+set FLOW full
+if {$argc == 1 && [lindex $argv 0] eq "synth"} {
+  set FLOW synth
+} elseif {$argc != 0} {
+  puts stderr "Usage: run_xilinx.tcl ?synth?"
+  exit 1
+}
+
 # Pass all available cores to Vivado
 if {$tcl_platform(platform) eq "windows"} {
   set CPUS $::env(NUMBER_OF_PROCESSORS)
@@ -18,7 +27,7 @@ if { ![info exists CPUS] || $CPUS eq "" } {
 }
 #
 set PROJECT $::env(PROJECT)
-set BUILD_DIR $::env(BUILD_DIR)
+set BUILD_DIR [file normalize $::env(BUILD_DIR)]
 
 if { $PROJECT eq "z1" } {
   set XILINX_PART xc7z020clg400-1
@@ -36,7 +45,7 @@ if { $PROJECT eq "z1" } {
 
 set DIR [file normalize .]
 
-create_project didactic-$PROJECT ../build/fpga/$PROJECT -force -part $XILINX_PART
+create_project didactic-$PROJECT $BUILD_DIR/fpga/$PROJECT -force -part $XILINX_PART
 
 # Read pre-generated include dirs and file lists (produced by make gen_filelists)
 set fp [open "$DIR/includes.f" r]
@@ -105,7 +114,7 @@ if { $PROJECT eq "z1" } {
   
   # Initialise IMEM from the firmware hex built by 'make build_test TEST=<name>'
   set TEST $::env(TEST)
-  set IMEM_INIT_FILE [file normalize "$DIR/../build/fpga/sw/${TEST}.hex"]
+  set IMEM_INIT_FILE [file normalize "$BUILD_DIR/fpga/sw/${TEST}.hex"]
   set_property generic "IMEM_INIT_FILE=$IMEM_INIT_FILE" [current_fileset]
   puts "INFO: IMEM init file -> $IMEM_INIT_FILE"
 } else {
@@ -129,8 +138,17 @@ set_property -name {STEPS.SYNTH_DESIGN.ARGS.MORE OPTIONS} -value -sfcu -objects 
 # Use single file compilation unit mode to prevent issues with import pkg::* statements in the codebase
 launch_runs synth_1 -jobs $CPUS
 wait_on_run synth_1
+if {[get_property PROGRESS [get_runs synth_1]] ne "100%"} {
+  puts stderr "Synthesis failed; inspect the synth_1 run log."
+  exit 1
+}
 open_run synth_1 -name netlist_1
 set_property needs_refresh false [get_runs synth_1]
+
+if {$FLOW eq "synth"} {
+  puts "Synthesis complete: $BUILD_DIR/fpga/$PROJECT (implementation was not requested)."
+  exit 0
+}
 
 # Launch Implementation
 # default strategy creates issues with hold. we trade runtime to get timing correct.

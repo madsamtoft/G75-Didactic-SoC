@@ -19,6 +19,7 @@ TEST ?= blink
 # Accelerator language: sv (src/rtl/pixel_acc.sv) or vhdl (src/rtl/pixel_acc_vhd.vhd)
 ACC_LANG ?= sv
 
+.PHONE: repository_init check-env clean_build clean_ips clean_all
 
 # Fetch submodule revisions and 
 # save work in submodules to stashes - avoid data loss by accidents
@@ -45,6 +46,9 @@ clean_all: clean_build clean_ips
 ######################################################################
 #
 ######################################################################
+
+.PHONY: soc-rtl
+
 soc-rtl:
 	echo "Generating SoC RTL. Check variables from scripts/run_kactus2_script.sh to be able to run Kactus2."
 	source scripts/run_kactus2_script.sh -f scripts/kactus2_generate_soc_rtl.py
@@ -52,6 +56,8 @@ soc-rtl:
 ######################################################################
 # hw targets
 ######################################################################
+
+.PHONY: compile elaborate elaborate_fast syn syn-vivado
 
 # compile hw library with chosen tools
 compile: check-env
@@ -65,13 +71,19 @@ elaborate: check-env
 elaborate_fast: check-env
 	$(MAKE) -C sim elaborate_fast BUILD_DIR=$(BUILD_DIR) TESTCASE=$(TEST)
 
-# Potentionally split this to multiple subtasks
+# Synthesis only, using the same platform-specific Vivado wrapper as make fpga.
+
 syn: check-env
-	$(MAKE) -C syn synthesize BUILD_DIR=$(BUILD_DIR)
+	$(MAKE) -C syn synthesize BUILD_DIR=$(BUILD_DIR) 
+
+syn-vivado: check-env
+	$(MAKE) -C fpga synth_xilinx BUILD_DIR="$(BUILD_DIR)" ACC_LANG=$(ACC_LANG)
 
 ######################################################################
 # sim targets
 ######################################################################
+
+.PHONY: run_sim
 
 # compile hw library with chosen tools
 run_sim: check-env
@@ -80,13 +92,17 @@ run_sim: check-env
 ######################################################################
 # sw targets
 ######################################################################
-#
+
+.PHONY: build_test
+
 build_test: check-env
 	$(MAKE) -C sw test BUILD_DIR=$(BUILD_DIR) TESTCASE=$(TEST)
 
 ######################################################################
 # full flow targets
 ######################################################################
+
+.PHONY: test_all test_all_gui test_ss test_ss_gui
 
 test_all: check-env compile elaborate_fast build_test run_sim
 
@@ -103,8 +119,12 @@ test_ss_gui: check-env
 # fpga targets
 ######################################################################
 
+.PHONY: fpga vivado-check vivado-start
+
 fpga: check-env
-	$(MAKE) -C fpga all_xilinx BUILD_DIR=$(BUILD_DIR) ACC_LANG=$(ACC_LANG)
+	$(MAKE) -C fpga all_xilinx BUILD_DIR="$(BUILD_DIR)" ACC_LANG=$(ACC_LANG)
+
+vivado-check vivado-start:	$(MAKE) -C fpga $@ BUILD_DIR="$(BUILD_DIR)" ACC_LANG=$(ACC_LANG)
 
 ######################################################################
 # verilator targets

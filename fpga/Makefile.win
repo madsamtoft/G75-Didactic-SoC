@@ -18,8 +18,16 @@ export ACC_LANG  ?= sv
 check_env:
 	if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
 
+.PHONY: synth_xilinx all_xilinx all_xilinx_gui
+synth_xilinx: check_env
+	$(VIVADO) -mode batch -notrace -source scripts\run_xilinx.tcl -tclargs synth
+
 all_xilinx: check_env
 	$(VIVADO) -mode batch -notrace -source scripts\run_xilinx.tcl
+
+.PHONY: vivado-check
+vivado-check: check_env
+	$(VIVADO) -mode batch -notrace -nojournal -log "$(BUILD_DIR)/vivado-check.log" -source scripts/check_vivado.tcl
 
 all_xilinx_gui: check_env
 	start $(VIVADO) -mode gui -source scripts\run_xilinx.tcl

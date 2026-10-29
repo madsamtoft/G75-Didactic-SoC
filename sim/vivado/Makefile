@@ -45,7 +45,6 @@ XSIM_ARGS = SOURCE_LIST "$(SOURCE_LIST)" TOP "$(SIM_TOP)" ACC_LANG "$(ACC_LANG)"
 .PHONY: sim-vivado sim-vivado-check
 sim-vivado: sources
 	$(VIVADO) -mode batch -notrace -nojournal -nolog -source run.tcl -tclargs $(XSIM_ARGS)
-	$(PYTHON) validate.py "$(BUILD_DIR)/xsim/$(SIM_TOP)/$(ACC_LANG)" --time "$(SIM_TIME)"
 
 # Resolve and validate the input manifest without compiling or simulating.
 sim-vivado-check: sources

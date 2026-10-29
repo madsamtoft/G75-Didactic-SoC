@@ -139,7 +139,7 @@ initial begin
     // ----------------------------------------------------------
     // Read input PGM (P2 ASCII)
     // ----------------------------------------------------------
-    fd = $fopen({SRC_IMG_PATH, SRC_IMAGE}, "r");
+    fd = $fopen({SRC_IMG_PATH, "/", SRC_IMAGE}, "r");
     if (fd == 0)
         $fatal(1, "[TB] ERROR: could not open %s%s", SRC_IMG_PATH, SRC_IMAGE);
 

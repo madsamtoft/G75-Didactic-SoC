@@ -27,13 +27,6 @@ Unless the Lab Guide explicitly says otherwise, run `make` commands from this
 directory (the project root). On Windows, use `make -f Makefile.win` instead of
 `make`.
 
-On macOS, FPGA builds use the existing Colima/Docker Vivado runtime. See
-[macOS setup and validation](fpga/docker/README.md), then run `make vivado-check`
-before a full FPGA build. Linux and Windows continue to use native Vivado.
-`make syn` runs Vivado synthesis only; `make fpga` also runs implementation and
-bitstream generation. `make compile` and the current simulation targets still
-require Questa and are outside the Vivado flow.
-
 ## Directory structure
 
 ```

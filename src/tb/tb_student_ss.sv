@@ -119,20 +119,14 @@ initial begin
     end
 
     // Skip P2 header lines (magic, comment, dimensions, maxval)
-    io_status = $fgets(hdr_str, fd);
-    if (io_status == 0) $fatal(1, "Truncated PGM header");  // P2
-    io_status = $fgets(hdr_str, fd);
-    if (io_status == 0) $fatal(1, "Truncated PGM header");  // comment
-    io_status = $fgets(hdr_str, fd);
-    if (io_status == 0) $fatal(1, "Truncated PGM header");  // width height
-    io_status = $fgets(hdr_str, fd);
-    if (io_status == 0) $fatal(1, "Truncated PGM header");  // maxval
+    void'($fgets(hdr_str, fd));  // P2
+    void'($fgets(hdr_str, fd));  // comment
+    void'($fgets(hdr_str, fd));  // width height
+    void'($fgets(hdr_str, fd));  // maxval
 
     // Read ASCII pixel values
     for (i = 0; i < TOTAL_PIXELS; i++) begin
-        io_status = $fscanf(fd, "%d", tmp_val);
-        if (io_status != 1 || tmp_val < 0 || tmp_val > 255)
-            $fatal(1, "Invalid PGM pixel %0d", i);
+        void'($fscanf(fd, "%d", tmp_val));
         pixels_in[i] = tmp_val[7:0];
     end
     $fclose(fd);

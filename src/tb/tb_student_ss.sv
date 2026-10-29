@@ -94,6 +94,7 @@ logic [7:0] pixels_out [0:TOTAL_PIXELS-1];
 
 integer      fd, i;
 integer      tmp_val;
+integer      io_status;
 string       hdr_str, out_path;
 logic [31:0] word, csr;
 
@@ -112,20 +113,26 @@ initial begin
     // 1. Read input PGM
     // ----------------------------------------------------------
 
-    fd = $fopen({src_image_path, src_image}, "r");
+    fd = $fopen({src_image_path, "/", src_image}, "r");
     if (fd == 0) begin
         $fatal(1, "ERROR: could not open %s%s", src_image_path, src_image);
     end
 
     // Skip P2 header lines (magic, comment, dimensions, maxval)
-    void'($fgets(hdr_str, fd));  // P2
-    void'($fgets(hdr_str, fd));  // comment
-    void'($fgets(hdr_str, fd));  // width height
-    void'($fgets(hdr_str, fd));  // maxval
+    io_status = $fgets(hdr_str, fd);
+    if (io_status == 0) $fatal(1, "Truncated PGM header");  // P2
+    io_status = $fgets(hdr_str, fd);
+    if (io_status == 0) $fatal(1, "Truncated PGM header");  // comment
+    io_status = $fgets(hdr_str, fd);
+    if (io_status == 0) $fatal(1, "Truncated PGM header");  // width height
+    io_status = $fgets(hdr_str, fd);
+    if (io_status == 0) $fatal(1, "Truncated PGM header");  // maxval
 
     // Read ASCII pixel values
     for (i = 0; i < TOTAL_PIXELS; i++) begin
-        void'($fscanf(fd, "%d", tmp_val));
+        io_status = $fscanf(fd, "%d", tmp_val);
+        if (io_status != 1 || tmp_val < 0 || tmp_val > 255)
+            $fatal(1, "Invalid PGM pixel %0d", i);
         pixels_in[i] = tmp_val[7:0];
     end
     $fclose(fd);
@@ -174,8 +181,9 @@ initial begin
     // ----------------------------------------------------------
     // 6. Write output PGM
     // ----------------------------------------------------------
-    out_path = {out_image_path, src_image.substr(0, src_image.len()-5), "_result.pgm"};
+    out_path = {out_image_path, "/", src_image.substr(0, src_image.len()-5), "_result.pgm"};
     fd = $fopen(out_path, "w");
+    if (fd == 0) $fatal(1, "Could not open output image %s", out_path);
     $fwrite(fd, "P2\n%0d %0d\n255\n", FRAME_WIDTH, FRAME_HEIGHT);
     for (i = 0; i < TOTAL_PIXELS; i++)
         $fwrite(fd, "%0d\n", pixels_out[i]);

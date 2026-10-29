@@ -148,6 +148,7 @@ sources:
 vendor_package:
   - name: ibex
     target_dir: vendor_ips/ibex
+    patch_dir: patches/ibex
     upstream: { git: "https://github.com/lowRISC/ibex", rev: "8a3d46f095db817fafdad9de4d157ccb83a267fb" }
     include_from_upstream:
       - "vendor/lowrisc_ip/ip/prim/rtl/prim_ram_1p_pkg.sv"

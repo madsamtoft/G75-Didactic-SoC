@@ -39,6 +39,14 @@ logic clk   = 1'b0;
 logic reset = 1'b0;
 always #5 clk = ~clk;  // 100 MHz
 
+`ifdef XSIM
+// Bound batch runs so a stalled CPU/UART produces a failure, not an endless run.
+initial begin
+    #(TOTAL_PIXELS * UART_BIT_NS * 10 + 1000000);
+    $fatal(1, "[TB] Timeout waiting for firmware/accelerator completion");
+end
+`endif
+
 // ----------------------------------------------------------------
 // DUT wiring - inout ports require tri/wire intermediaries
 // ----------------------------------------------------------------
@@ -117,6 +125,7 @@ logic [7:0] pixels_out [0:TOTAL_PIXELS-1];
 // ----------------------------------------------------------------
 integer  fd, i;
 integer  tmp_val;
+integer  io_status;
 string   hdr_str, out_path;
 logic [31:0] obuf_word;
 
@@ -130,16 +139,22 @@ initial begin
     // ----------------------------------------------------------
     // Read input PGM (P2 ASCII)
     // ----------------------------------------------------------
-    fd = $fopen({SRC_IMG_PATH, SRC_IMAGE}, "r");
+    fd = $fopen({SRC_IMG_PATH, "/", SRC_IMAGE}, "r");
     if (fd == 0)
         $fatal(1, "[TB] ERROR: could not open %s%s", SRC_IMG_PATH, SRC_IMAGE);
 
-    void'($fgets(hdr_str, fd));  // P2
-    void'($fgets(hdr_str, fd));  // comment
-    void'($fgets(hdr_str, fd));  // width height
-    void'($fgets(hdr_str, fd));  // maxval
+    io_status = $fgets(hdr_str, fd);
+    if (io_status == 0) $fatal(1, "Truncated PGM header");  // P2
+    io_status = $fgets(hdr_str, fd);
+    if (io_status == 0) $fatal(1, "Truncated PGM header");  // comment
+    io_status = $fgets(hdr_str, fd);
+    if (io_status == 0) $fatal(1, "Truncated PGM header");  // width height
+    io_status = $fgets(hdr_str, fd);
+    if (io_status == 0) $fatal(1, "Truncated PGM header");  // maxval
     for (i = 0; i < TOTAL_PIXELS; i++) begin
-        $fscanf(fd, "%d", tmp_val);
+        io_status = $fscanf(fd, "%d", tmp_val);
+        if (io_status != 1 || tmp_val < 0 || tmp_val > 255)
+            $fatal(1, "Invalid PGM pixel %0d", i);
         pixels_in[i] = tmp_val[7:0];
     end
     $fclose(fd);
@@ -211,8 +226,9 @@ initial begin
     // ----------------------------------------------------------
     // Write output PGM (P2 ASCII)
     // ----------------------------------------------------------
-    out_path = {OUT_IMG_PATH, SRC_IMAGE.substr(0, SRC_IMAGE.len()-5), "_result.pgm"};
+    out_path = {OUT_IMG_PATH, "/", SRC_IMAGE.substr(0, SRC_IMAGE.len()-5), "_result.pgm"};
     fd = $fopen(out_path, "w");
+    if (fd == 0) $fatal(1, "Could not open output image %s", out_path);
     $fwrite(fd, "P2\n%0d %0d\n255\n", FRAME_WIDTH, FRAME_HEIGHT);
     for (i = 0; i < TOTAL_PIXELS; i++)
         $fwrite(fd, "%0d\n", pixels_out[i]);

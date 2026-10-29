@@ -29,9 +29,9 @@ repository_init:
 #	git submodule update --init --recursive
 
 check-env:
-	mkdir -p $(BUILD_DIR)/logs/compile
-	mkdir -p $(BUILD_DIR)/logs/opt
-	mkdir -p $(BUILD_DIR)/logs/sim
+	mkdir -p "$(BUILD_DIR)"/logs/compile
+	mkdir -p "$(BUILD_DIR)"/logs/opt
+	mkdir -p "$(BUILD_DIR)"/logs/sim
 	mkdir -p src/tb/out_images
 
 clean_build:
@@ -96,7 +96,7 @@ run_sim: check-env
 .PHONY: build_test
 
 build_test: check-env
-	$(MAKE) -C sw test BUILD_DIR=$(BUILD_DIR) TESTCASE=$(TEST)
+	$(MAKE) -C sw test BUILD_DIR="$(BUILD_DIR)" TESTCASE=$(TEST)
 
 ######################################################################
 # full flow targets
@@ -127,7 +127,7 @@ fpga: check-env
 vivado-check vivado-start:
 	$(MAKE) -C fpga $@ BUILD_DIR="$(BUILD_DIR)" ACC_LANG=$(ACC_LANG)
 
-# Independent XSting Questaim backend; exis targets above remain unchanged.
+# Independent XSim backend; existing Questa targets above remain unchanged.
 XSIM_BUILD_DIR = $(if $(or $(filter /%,$(BUILD_DIR)),$(findstring :,$(BUILD_DIR))),$(BUILD_DIR),$(CURDIR)/$(BUILD_DIR))
 .PHONY: sim-vivado sim-vivado-check
 sim-vivado sim-vivado-check:

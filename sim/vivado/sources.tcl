@@ -1,4 +1,4 @@
-# Reuse the committed Questa lists without accepting Questa-only compiler flags.
+# Read a fresh Bender manifest with the same targets as Questa.
 proc xsim_read_lines {path} {
     set fd [open $path r]
     set lines [split [read $fd] "\n"]
@@ -27,31 +27,35 @@ proc xsim_sources {root config} {
     switch -- $TOP {
         tb_student_ss {
             set files [list $root/src/tb/tb_student_ss.sv $root/src/rtl/Student_area_0.sv]
-            set generics [list src_image=$IMAGE src_image_path=$root/src/tb/src_images/ out_image_path=$OUTPUT/images/]
+            set generics [list src_image=$IMAGE src_image_path=$root/src/tb/src_images out_image_path=../../images]
         }
         tb_didactic {
             set files {}
-            foreach entry [xsim_read_lines $root/sim/flist.f] {
-                if {[string match {-*} $entry] || [string match {+*} $entry]} {
-                    error "Unsupported source-list option: $entry"
+            foreach entry [xsim_read_lines $SOURCE_LIST] {
+                if {[string match {+incdir+*} $entry]} {
+                    lappend includes [string range $entry 8 end]
+                } elseif {[string match {+define+*} $entry]} {
+                    lappend defines [string range $entry 8 end]
+                } elseif {[string match {-*} $entry] || [string match {+*} $entry]} {
+                    error "Unsupported Bender option: $entry"
+                } else {
+                    # Headers are included by RTL, not compilation units. In
+                    # particular, compiling prim_assert_dummy_macros.svh here
+                    # would replace live assertions with empty macro bodies.
+                    if {[file extension $entry] eq ".svh"} {continue}
+                    if {$SIM_UART_MODEL && [file tail $entry] eq "apb_uart.sv"} {continue}
+                    lappend files $entry
                 }
-                set path [file normalize [file join $root sim $entry]]
-                # Questa recompiles this module with a behavioral replacement.
-                if {$SIM_UART_MODEL && [file tail $path] eq "apb_uart.sv"} {continue}
-                lappend files $path
             }
             if {$SIM_UART_MODEL} {lappend files $root/src/tb/apb_uart_sim.sv}
-            foreach entry [xsim_read_lines $root/sim/includes.f] {
-                if {![string match {+incdir+*} $entry]} {error "Unsupported include-list option: $entry"}
-                foreach path [split [string range $entry 8 end] +] {
-                    lappend includes [file normalize [file join $root sim $path]]
-                }
+            foreach path {vendor/lowrisc_ip/dv/sv/dv_utils vendor/lowrisc_ip/ip/prim/rtl rtl} {
+                lappend includes $root/vendor_ips/ibex/$path
             }
-            set defines {RVFI INC_ASSERT USE_UART USE_SPI}
+            lappend defines RVFI INC_ASSERT USE_UART USE_SPI XSIM
             foreach {name macro} {FAST_UART SIM_FAST_UART SIM_UART_MODEL SIM_UART_MODEL BYPASS_UART BYPASS_UART} {
                 if {[dict get $config $name]} {lappend defines $macro}
             }
-            set generics [list TESTCASE=$TESTCASE SRC_IMAGE=$IMAGE SRC_IMG_PATH=$root/src/tb/src_images/ OUT_IMG_PATH=$OUTPUT/images/]
+            set generics [list TESTCASE=$TESTCASE SRC_IMAGE=$IMAGE SRC_IMG_PATH=$root/src/tb/src_images OUT_IMG_PATH=../../images]
         }
         tb_xsim_smoke {set files [list $root/sim/vivado/tests/tb_xsim_smoke.sv]}
         default {error "Unsupported SIM_TOP: $TOP (use tb_student_ss, tb_didactic or tb_xsim_smoke)"}
@@ -78,5 +82,15 @@ proc xsim_sources {root config} {
         }
         set generics [concat $filtered [list $generic]]
     }
+    # A trailing separator in a string generic can break XSim's generated C++
+    # scope string. A final dot denotes the same directory without that ending.
+    set normalized {}
+    foreach generic $generics {
+        if {[regexp {^(SRC_IMG_PATH|OUT_IMG_PATH|src_image_path|out_image_path)=(.*)/$} $generic]} {
+            append generic .
+        }
+        lappend normalized $generic
+    }
+    set generics $normalized
     return [dict create sv $files vhdl $vhdl includes $includes defines $defines generics $generics]
 }

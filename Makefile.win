@@ -88,3 +88,8 @@ syn: check-env
 .PHONY: vivado-check
 vivado-check:
 	$(MAKE) -C fpga -f Makefile.win vivado-check BUILD_DIR="$(BUILD_DIR)" ACC_LANG=$(ACC_LANG)
+
+XSIM_BUILD_DIR = $(if $(or $(filter /%,$(BUILD_DIR)),$(findstring :,$(BUILD_DIR))),$(BUILD_DIR),$(CURDIR)/$(BUILD_DIR))
+.PHONY: sim-vivado sim-vivado-check sim-vivado-clean
+sim-vivado sim-vivado-check sim-vivado-clean:
+	$(MAKE) -C sim/vivado $@ BUILD_DIR="$(XSIM_BUILD_DIR)" ACC_LANG=$(ACC_LANG) TESTCASE=$(TEST)

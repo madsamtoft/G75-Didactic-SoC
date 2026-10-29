@@ -122,14 +122,28 @@ test_ss_gui: check-env
 .PHONY: fpga vivado-check vivado-start
 
 fpga: check-env
-	$(MAKE) -C fpga all_xilinx BUILD_DIR="$(BUILD_DIR)" ACC_LANG=$(ACC_LANG)
+	$(MAKE) -C fpga all_xilinx BUILD_DIR="$(BUILD_DIR)" ACC_LANG=$(ACC_LANG)gbt66
 
-vivado-check vivado-start:	$(MAKE) -C fpga $@ BUILD_DIR="$(BUILD_DIR)" ACC_LANG=$(ACC_LANG)
+vivado-check vivado-start:
+	$(MAKE) -C fpga $@ BUILD_DIR="$(BUILD_DIR)" ACC_LANG=$(ACC_LANG)
+
+# Independent XSting Questaim backend; exis targets above remain unchanged.
+XSIM_BUILD_DIR = $(if $(or $(filter /%,$(BUILD_DIR)),$(findstring :,$(BUILD_DIR))),$(BUILD_DIR),$(CURDIR)/$(BUILD_DIR))
+.PHONY: sim-vivado sim-vivado-check
+sim-vivado sim-vivado-check:
+	$(MAKE) -C sim/vivado $@ BUILD_DIR="$(XSIM_BUILD_DIR)" ACC_LANG=$(ACC_LANG) TESTCASE=$(TEST)
 
 ######################################################################
-# verilator targets
+# clean files
 ######################################################################
 
-.PHONY: verilate
-verilate:
-	@python3 ./verification/verilator/verilate.py
+.PHONY: clean
+clean:
+	rm -rf build/
+
+clean-all: clean
+	rm -rf .bender
+	rm -rf .Xil
+	rm -rf vendor_ips
+	rm -f  Bender.lock
+

@@ -41,8 +41,11 @@ always #5 clk = ~clk;  // 100 MHz
 
 `ifdef XSIM
 // Bound batch runs so a stalled CPU/UART produces a failure, not an endless run.
+// Allow multi-cycle accelerators (the Sobel implementation needs about 10 ms).
+// Override with SIM_GENERICS='PROCESS_TIMEOUT_NS=...' when needed.
+parameter int unsigned PROCESS_TIMEOUT_NS = 100_000_000;
 initial begin
-    #(TOTAL_PIXELS * UART_BIT_NS * 10 + 1000000);
+    #(TOTAL_PIXELS * UART_BIT_NS * 10 + PROCESS_TIMEOUT_NS);
     $fatal(1, "[TB] Timeout waiting for firmware/accelerator completion");
 end
 `endif

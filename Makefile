@@ -130,7 +130,9 @@ vivado-check vivado-start:
 # Independent XSim backend; existing Questa targets above remain unchanged.
 XSIM_BUILD_DIR = $(if $(or $(filter /%,$(BUILD_DIR)),$(findstring :,$(BUILD_DIR))),$(BUILD_DIR),$(CURDIR)/$(BUILD_DIR))
 .PHONY: sim-vivado sim-vivado-check
-sim-vivado sim-vivado-check: build_test
+sim-vivado: $(if $(filter tb_didactic,$(SIM_TOP)),build_test)
+
+sim-vivado sim-vivado-check:
 	$(MAKE) -C sim/vivado $@ BUILD_DIR="$(XSIM_BUILD_DIR)" ACC_LANG=$(ACC_LANG) TESTCASE=$(TEST)
 
 ######################################################################
@@ -140,9 +142,11 @@ sim-vivado sim-vivado-check: build_test
 .PHONY: clean
 clean:
 	rm -rf build/
+	rm -rf src/tb/out_images
 
 clean-all: clean
 	rm -rf .bender
 	rm -rf .Xil
 	rm -rf vendor_ips
 	rm -f  Bender.lock
+	

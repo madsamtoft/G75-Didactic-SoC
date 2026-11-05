@@ -1,4 +1,5 @@
 # Separate entry point: never included by the Questa Makefiles.
+# Full image runs publish to ../../src/tb/out_images and retain build/xsim copies.
 BUILD_DIR ?= ../../build
 ACC_LANG ?= sv
 SIM_TOP ?= tb_student_ss

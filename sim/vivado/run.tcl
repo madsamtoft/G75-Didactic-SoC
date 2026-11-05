@@ -2,6 +2,7 @@
 set script_dir [file dirname [file normalize [info script]]]
 set root [file normalize $script_dir/../..]
 source $script_dir/sources.tcl
+source $script_dir/images.tcl
 
 proc xsim_write {path contents} {
     set fd [open $path w]
@@ -76,6 +77,12 @@ proc xsim_main {root script_dir argv} {
     if {$CHECK_ONLY} {return}
 
     file mkdir $output/images $output/runtime/sim/stdout
+    set image [xsim_image_path $TOP [dict get $sources generics] $output/runtime/sim]
+    # An older result must never satisfy this run's image validation.
+    if {$image ne ""} {
+        file mkdir [file dirname $image]
+        file delete -force $image
+    }
     if {$TOP eq "tb_didactic"} {
         # The active TB hardcodes ../build/sw; stage firmware beside its private
         # runtime cwd so no RTL edits or administrator-only Windows symlinks are needed.
@@ -121,6 +128,8 @@ proc xsim_main {root script_dir argv} {
     file mkdir $scratch/runtime
     if {[file isdirectory $output/runtime/build]} {file copy $output/runtime/build $scratch/runtime/build}
     file mkdir $scratch/runtime/sim/stdout $scratch/images
+    set scratch_image [xsim_image_path $TOP [dict get $sources generics] $scratch/runtime/sim]
+    if {$scratch_image ne ""} {file mkdir [file dirname $scratch_image]}
     set runtime_config $config
     dict set runtime_config OUTPUT $scratch
     xsim_write $output/run-config.tcl "[list set xsim_config $runtime_config]\n[list source $script_dir/simulate.tcl]"
@@ -143,6 +152,10 @@ proc xsim_main {root script_dir argv} {
         file delete -force $destination
         file copy -force $path $destination
     }
+    # Also collect images when SIM_GENERICS overrides the default output path.
+    if {$scratch_image ne "" && $scratch_image ne $image && [file isfile $scratch_image]} {
+        file copy -force $scratch_image $image
+    }
     file delete -force $scratch
     if {$failed} {return -options $options $message}
     set log [join [xsim_read_lines $output/xsim.log] "\n"]
@@ -157,6 +170,9 @@ proc xsim_main {root script_dir argv} {
     xsim_validate_vcd $output/waveform.vcd
     if {$TIME eq "all" && ![regexp {\$finish called at time} $log]} {
         error "Simulation returned without the testbench finishing; see $output/xsim.log"
+    }
+    if {$TIME eq "all" && $image ne ""} {
+        xsim_publish_image $image $root/src/tb/out_images
     }
     puts "Simulation completed; VCD: $output/waveform.vcd"
 }

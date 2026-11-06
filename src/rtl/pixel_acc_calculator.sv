@@ -21,6 +21,6 @@ module pixel_acc_calculator (
         // 10 bits and will truncate to 0. Ideally should round to 1023
         dxabs = dx[10] ? -dx : dx;
         dyabs = dy[10] ? -dy : dy;
-        d = (dxabs + dyabs) >> 3
+        d = (dxabs + dyabs) >> 3;
     end
 endmodule

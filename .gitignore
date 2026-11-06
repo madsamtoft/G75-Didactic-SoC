@@ -21,6 +21,9 @@ fpga/serial_interface/.venv
 fpga/dfx_runtime.txt
 fpga/local.mk
 
+# Extensions
+*.sigasi
+
 # Core dumps
 *core
 *core.*

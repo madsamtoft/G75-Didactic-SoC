@@ -64,7 +64,6 @@ module pixel_acc #(
     logic [BUF_AW-1:0] rd_addr;   // current ibuf read address
     logic [BUF_AW-1:0] wr_addr;   // current obuf write address (= rd_addr delayed 1 cycle)
     logic              pipe_valid; // 0 on first PROCESS cycle (rd_data not yet valid)
-    logic [31:0] pixel_out;
 
     localparam int IMAGE_PIXEL_WIDTH = IMG_WIDTH * 4;
     localparam int HEIGHT = BUF_DEPTH / IMG_WIDTH;
@@ -141,16 +140,16 @@ module pixel_acc #(
         ky = 0;
 
         case (kernel_idx)
-            0: begin kx=-1; ky=-1; end
-            1: begin kx= 0; ky=-2; end
-            2: begin kx= 1; ky=-1; end
-            3: begin kx=-2; ky= 0; end
-            4: begin kx= 0; ky= 0; end // Could not include, but meh
-            5: begin kx= 2; ky= 0; end
-            6: begin kx=-1; ky= 1; end
-            7: begin kx= 0; ky= 2; end
-            8: begin kx= 1; ky= 1; end
-            default: begin kx=0; ky=0; end
+            0:       begin kx =-1; ky =-1; end
+            1:       begin kx = 0; ky =-2; end
+            2:       begin kx = 1; ky =-1; end
+            3:       begin kx =-2; ky = 0; end
+            4:       begin kx = 0; ky = 0; end // Could not include, but meh
+            5:       begin kx = 2; ky = 0; end
+            6:       begin kx =-1; ky = 1; end
+            7:       begin kx = 0; ky = 2; end
+            8:       begin kx = 1; ky = 1; end
+            default: begin kx = 0; ky = 0; end
         endcase
     end
 

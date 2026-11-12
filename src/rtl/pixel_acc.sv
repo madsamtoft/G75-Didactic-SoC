@@ -67,6 +67,23 @@ module pixel_acc #(
     // logic              pipe_valid; // 0 on first PROCESS cycle (rd_data not yet valid)
     // logic [31:0] pixel_out;
 
+    wire [31:0] row0 [0:2];
+    wire [31:0] row1 [0:2];
+    wire [31:0] row2 [0:2];
+
+    shift_reg #(
+        .WORD_WIDTH(32),
+        .IMG_WIDTH(IMG_WIDTH)
+    ) i_shift_reg (
+        .clk     (clk),
+        .rst_n   (rst_n),
+        .clear   ((state == IDLE) && start),
+        .push    (response_valid),
+        .word_in (ibuf_rd_data),
+        .row0    (row0),
+        .row1    (row1),
+        .row2    (row2)
+    );
 
     // ---- FSM ----
     always_ff @(posedge clk or negedge rst_n) begin
@@ -98,7 +115,6 @@ module pixel_acc #(
                     rd_addr <= rd_addr + 1;
                     ibuf_rd_en   <= 1'b1;
                     ibuf_rd_addr <= rd_addr + 1;
-                    // Assign ibuf_rd_data to row2[2]
                     if (rd_addr == IMG_WIDTH + 2) begin
                         state <= PROCESS;
                     end
@@ -108,7 +124,6 @@ module pixel_acc #(
                     rd_addr <= rd_addr + 1;
                     ibuf_rd_en   <= 1'b1;
                     ibuf_rd_addr <= rd_addr + 1;
-                    // Assign ibuf_rd_data to row2[2]
                     wr_addr <= wr_addr + 1;
                     obuf_wr_en   <= 1'b1;
                     obuf_wr_addr <= wr_addr;

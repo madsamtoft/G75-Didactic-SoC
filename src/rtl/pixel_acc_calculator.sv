@@ -27,47 +27,51 @@ endmodule
 
 module input_splitter (
     input logic [31:0] w1, w2, w3, w4, w5, w6, w7, w8, w9,
-    output logic [7:0] s11_1, s12_1, s13_1, s21_1, s23_1, s31_1, s32_1, s33_1,
-    output logic [7:0] s11_2, s12_2, s13_2, s21_2, s23_2, s31_2, s32_2, s33_2,
-    output logic [7:0] s11_3, s12_3, s13_3, s21_3, s23_3, s31_3, s32_3, s33_3,
-    output logic [7:0] s11_4, s12_4, s13_4, s21_4, s23_4, s31_4, s32_4, s33_4
+    output logic [7:0] s11[0:3],
+    output logic [7:0] s12[0:3],
+    output logic [7:0] s13[0:3],
+    output logic [7:0] s21[0:3],
+    output logic [7:0] s23[0:3],
+    output logic [7:0] s31[0:3],
+    output logic [7:0] s32[0:3],
+    output logic [7:0] s33[0:3]
 );
 
-    assign s11_1 = w1[31:24];
-    assign s12_1 = w2[7:0];
-    assign s13_1 = w2[15:8];
-    assign s21_1 = w4[31:24];
-    assign s23_1 = w5[15:8];
-    assign s31_1 = w7[31:24];
-    assign s32_1 = w8[7:0];
-    assign s33_1 = w8[15:8];
+    assign s11[0] = w1[31:24];
+    assign s12[0] = w2[7:0];
+    assign s13[0] = w2[15:8];
+    assign s21[0] = w4[31:24];
+    assign s23[0] = w5[15:8];
+    assign s31[0] = w7[31:24];
+    assign s32[0] = w8[7:0];
+    assign s33[0] = w8[15:8];
 
-    assign s11_2 = w1[7:0];
-    assign s12_2 = w1[15:8];
-    assign s13_2 = w1[23:16];
-    assign s21_2 = w5[7:0];
-    assign s23_2 = w5[23:16];
-    assign s31_2 = w8[7:0];
-    assign s32_2 = w8[15:8];
-    assign s33_2 = w8[23:16];
+    assign s11[1] = w1[7:0];
+    assign s12[1] = w1[15:8];
+    assign s13[1] = w1[23:16];
+    assign s21[1] = w5[7:0];
+    assign s23[1] = w5[23:16];
+    assign s31[1] = w8[7:0];
+    assign s32[1] = w8[15:8];
+    assign s33[1] = w8[23:16];
 
-    assign s11_3 = w1[15:8];
-    assign s12_3 = w1[23:16];
-    assign s13_3 = w1[31:24];
-    assign s21_3 = w5[15:8];
-    assign s23_3 = w5[31:24];
-    assign s31_3 = w8[15:8];
-    assign s32_3 = w8[23:16];
-    assign s33_3 = w8[31:24];
+    assign s11[2] = w1[15:8];
+    assign s12[2] = w1[23:16];
+    assign s13[2] = w1[31:24];
+    assign s21[2] = w5[15:8];
+    assign s23[2] = w5[31:24];
+    assign s31[2] = w8[15:8];
+    assign s32[2] = w8[23:16];
+    assign s33[2] = w8[31:24];
 
-    assign s11_4 = w2[23:16];
-    assign s12_4 = w2[31:24];
-    assign s13_4 = w3[7:0];
-    assign s21_4 = w5[23:16];
-    assign s23_4 = w6[7:0];
-    assign s31_4 = w8[23:16];
-    assign s32_4 = w8[31:24];
-    assign s33_4 = w9[7:0];
+    assign s11[3] = w2[23:16];
+    assign s12[3] = w2[31:24];
+    assign s13[3] = w3[7:0];
+    assign s21[3] = w5[23:16];
+    assign s23[3] = w6[7:0];
+    assign s31[3] = w8[23:16];
+    assign s32[3] = w8[31:24];
+    assign s33[3] = w9[7:0];
 endmodule
 
 module sobel_processing_core (
@@ -77,10 +81,15 @@ module sobel_processing_core (
     output logic [31:0] dOut
 );
     // Internal signals
-    logic [7:0] s11_1, s12_1, s13_1, s21_1, s23_1, s31_1, s32_1, s33_1;
-    logic [7:0] s11_2, s12_2, s13_2, s21_2, s23_2, s31_2, s32_2, s33_2;
-    logic [7:0] s11_3, s12_3, s13_3, s21_3, s23_3, s31_3, s32_3, s33_3;
-    logic [7:0] s11_4, s12_4, s13_4, s21_4, s23_4, s31_4, s32_4, s33_4;
+    logic [7:0] s11[0:3];
+    logic [7:0] s12[0:3];
+    logic [7:0] s13[0:3];
+    logic [7:0] s21[0:3];
+    logic [7:0] s23[0:3];
+    logic [7:0] s31[0:3];
+    logic [7:0] s32[0:3];
+    logic [7:0] s33[0:3];
+
     logic [7:0] d1, d2, d3, d4;
 
     // Instantiate modules
@@ -88,25 +97,22 @@ module sobel_processing_core (
         .w1(row0[0]), .w2(row0[1]), .w3(row0[2]),
         .w4(row1[0]), .w5(row1[1]), .w6(row1[2]),
         .w7(row2[0]), .w8(row2[1]), .w9(row2[2]),
-        .s11_1(s11_1), .s12_1(s12_1), .s13_1(s13_1), .s21_1(s21_1), .s23_1(s23_1), .s31_1(s31_1), .s32_1(s32_1), .s33_1(s33_1), 
-        .s11_2(s11_2), .s12_2(s12_2), .s13_2(s13_2), .s21_2(s21_2), .s23_2(s23_2), .s31_2(s31_2), .s32_2(s32_2), .s33_2(s33_2), 
-        .s11_3(s11_3), .s12_3(s12_3), .s13_3(s13_3), .s21_3(s21_3), .s23_3(s23_3), .s31_3(s31_3), .s32_3(s32_3), .s33_3(s33_3), 
-        .s11_4(s11_4), .s12_4(s12_4), .s13_4(s13_4), .s21_4(s21_4), .s23_4(s23_4), .s31_4(s31_4), .s32_4(s32_4), .s33_4(s33_4)
+        .s11(s11), .s12(s12), .s13(s13), .s21(s21), .s23(s23), .s31(s31), .s32(s32), .s33(s33)
     );
     pixel_acc_calculator u_sobelProcessor1 (
-        .s11(s11_1), .s12(s12_1), .s13(s13_1), .s21(s21_1), .s23(s23_1), .s31(s31_1), .s32(s32_1), .s33(s33_1),
+        .s11(s11[0]), .s12(s12[0]), .s13(s13[0]), .s21(s21[0]), .s23(s23[0]), .s31(s31[0]), .s32(s32[0]), .s33(s33[0]),
         .d(d1)
     );
     pixel_acc_calculator u_sobelProcessor2 (
-        .s11(s11_2), .s12(s12_2), .s13(s13_2), .s21(s21_2), .s23(s23_2), .s31(s31_2), .s32(s32_2), .s33(s33_2),
+        .s11(s11[1]), .s12(s12[1]), .s13(s13[1]), .s21(s21[1]), .s23(s23[1]), .s31(s31[1]), .s32(s32[1]), .s33(s33[1]),
         .d(d2)
     );
     pixel_acc_calculator u_sobelProcessor3 (
-        .s11(s11_3), .s12(s12_3), .s13(s13_3), .s21(s21_3), .s23(s23_3), .s31(s31_3), .s32(s32_3), .s33(s33_3),
+        .s11(s11[2]), .s12(s12[2]), .s13(s13[2]), .s21(s21[2]), .s23(s23[2]), .s31(s31[2]), .s32(s32[2]), .s33(s33[2]),
         .d(d3)
     );
     pixel_acc_calculator u_sobelProcessor4 (
-        .s11(s11_4), .s12(s12_4), .s13(s13_4), .s21(s21_4), .s23(s23_4), .s31(s31_4), .s32(s32_4), .s33(s33_4),
+        .s11(s11[3]), .s12(s12[3]), .s13(s13[3]), .s21(s21[3]), .s23(s23[3]), .s31(s31[3]), .s32(s32[3]), .s33(s33[3]),
         .d(d4)
     );
 

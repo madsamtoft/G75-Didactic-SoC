@@ -85,6 +85,13 @@ module pixel_acc #(
         .row2    (row2)
     );
 
+    sobel_processing_core u_processor (
+        .row0   (row0),
+        .row1   (row1),
+        .row2   (row2),
+        .dOut   (obuf_wr_data)
+    );
+
     // ---- FSM ----
     always_ff @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
@@ -129,7 +136,7 @@ module pixel_acc #(
                     obuf_wr_addr <= wr_addr;
                     // Assign calculator output to obuf_wr_data
                     if (wr_addr == BUF_DEPTH - 1) begin
-                        state <= IDLE
+                        state <= IDLE;
                         finish <= 1'b1;
                     end
                     

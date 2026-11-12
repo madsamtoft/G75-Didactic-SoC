@@ -24,3 +24,48 @@ module pixel_acc_calculator (
         d = (dxabs + dyabs) >> 3;
     end
 endmodule
+
+module input_splitter (
+    input logic [31:0] w1, w2, w3, w4, w5, w6, w7, w8, w9,
+    output logic [7:0] s11_1, s12_1, s13_1, s21_1, s23_1, s31_1, s32_1, s33_1,
+    output logic [7:0] s11_2, s12_2, s13_2, s21_2, s23_2, s31_2, s32_2, s33_2,
+    output logic [7:0] s11_3, s12_3, s13_3, s21_3, s23_3, s31_3, s32_3, s33_3,
+    output logic [7:0] s11_4, s12_4, s13_4, s21_4, s23_4, s31_4, s32_4, s33_4
+);
+
+    assign s11_1 = w1[31:24];
+    assign s12_1 = w2[7:0];
+    assign s13_1 = w2[15:8];
+    assign s21_1 = w4[31:24];
+    assign s23_1 = w5[15:8];
+    assign s31_1 = w7[31:24];
+    assign s32_1 = w8[7:0];
+    assign s33_1 = w8[15:8];
+
+    assign s11_2 = w1[7:0];
+    assign s12_2 = w1[15:8];
+    assign s13_2 = w1[23:16];
+    assign s21_2 = w5[7:0];
+    assign s23_2 = w5[23:16];
+    assign s31_2 = w8[7:0];
+    assign s32_2 = w8[15:8];
+    assign s33_2 = w8[23:16];
+
+    assign s11_3 = w1[15:8];
+    assign s12_3 = w1[23:16];
+    assign s13_3 = w1[31:24];
+    assign s21_3 = w5[15:8];
+    assign s23_3 = w5[31:24];
+    assign s31_3 = w8[15:8];
+    assign s32_3 = w8[23:16];
+    assign s33_3 = w8[31:24];
+
+    assign s11_4 = w2[23:16];
+    assign s12_4 = w2[31:24];
+    assign s13_4 = w3[7:0];
+    assign s21_4 = w5[23:16];
+    assign s23_4 = w6[7:0];
+    assign s31_4 = w8[23:16];
+    assign s32_4 = w8[31:24];
+    assign s33_4 = w9[7:0];
+endmodule

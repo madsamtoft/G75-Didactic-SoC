@@ -66,7 +66,24 @@ module pixel_acc #(
     logic [BUF_AW-1:0] wr_addr;   // current obuf write address (= rd_addr delayed 1 cycle)
     logic              pipe_valid; // 0 on first PROCESS cycle (rd_data not yet valid)
     logic [31:0] pixel_out;
-    
+
+    wire [31:0] row0 [0:2];
+    wire [31:0] row1 [0:2];
+    wire [31:0] row2 [0:2];
+
+    shift_reg #(
+        .WORD_WIDTH(32),
+        .IMG_WIDTH(IMG_WIDTH)
+    ) i_shift_reg (
+        .clk     (clk),
+        .rst_n   (rst_n),
+        .clear   ((state == IDLE) && start),
+        .push    (response_valid),
+        .word_in (ibuf_rd_data),
+        .row0    (row0),
+        .row1    (row1),
+        .row2    (row2)
+    );
 
     // ---- FSM ----
     always_ff @(posedge clk or negedge rst_n) begin

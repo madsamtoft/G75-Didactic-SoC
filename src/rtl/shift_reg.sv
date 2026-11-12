@@ -23,10 +23,7 @@ module shift_reg #(
             for (int i = 0; i < DEPTH; i++)
                 words[i] <= '0;
         end else if (push) begin
-            for (int i = 0; i < DEPTH-1; i++)
-                words[i] <= words[i+1];
-            words[DEPTH-1] <= word_in;
-        
+            words <= {words[1:DEPTH-1], word_in};
         end
     end
 

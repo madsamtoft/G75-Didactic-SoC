@@ -56,17 +56,17 @@ module pixel_acc #(
     // ============================================================
 
     typedef enum logic [1:0] {
-        IDLE    = 2'b00,
-        PROCESS = 2'b01,
-        DRAIN   = 2'b10
+        IDLE,
+        PREFETCH,
+        PROCESS
     } state_t;
 
     state_t            state;
     logic [BUF_AW-1:0] rd_addr;   // current ibuf read address
     logic [BUF_AW-1:0] wr_addr;   // current obuf write address (= rd_addr delayed 1 cycle)
-    logic              pipe_valid; // 0 on first PROCESS cycle (rd_data not yet valid)
-    logic [31:0] pixel_out;
-    
+    // logic              pipe_valid; // 0 on first PROCESS cycle (rd_data not yet valid)
+    // logic [31:0] pixel_out;
+
 
     // ---- FSM ----
     always_ff @(posedge clk or negedge rst_n) begin
@@ -74,7 +74,7 @@ module pixel_acc #(
             state      <= IDLE;
             rd_addr    <= '0;
             wr_addr    <= '0;
-            pipe_valid <= 1'b0;
+            // pipe_valid <= 1'b0;
             ibuf_rd_en <= 1'b0;
             obuf_wr_en <= 1'b0;
             finish     <= 1'b0;
@@ -85,7 +85,7 @@ module pixel_acc #(
 
             case (state)
                 IDLE: begin
-                    pipe_valid <= 1'b0;
+                    // pipe_valid <= 1'b0;
                     if (start) begin
                         rd_addr      <= '0;
                         ibuf_rd_en   <= 1'b1;
@@ -94,43 +94,69 @@ module pixel_acc #(
                     end
                 end
 
-                PROCESS: begin
-                    pipe_valid <= 1'b1;
-                    wr_addr    <= rd_addr;  // write address tracks read address with 1 cycle latency
-
-                    // Write result from previous read (suppressed on first cycle)
-                    if (pipe_valid) begin
-                        obuf_wr_en   <= 1'b1;
-                        obuf_wr_addr <= wr_addr;
-                        obuf_wr_data <= pixel_out;
-                    end
-
-                    if (rd_addr == BUF_AW'(BUF_DEPTH - 1)) begin
-                        // Last read issued - drain the pipeline
-                        ibuf_rd_en <= 1'b0;
-                        state      <= DRAIN;
-                    end else begin
-                        rd_addr      <= rd_addr + 1'b1;
-                        ibuf_rd_en   <= 1'b1;
-                        ibuf_rd_addr <= rd_addr + 1'b1;
+                PREFETCH: begin
+                    rd_addr <= rd_addr + 1;
+                    ibuf_rd_en   <= 1'b1;
+                    ibuf_rd_addr <= rd_addr + 1;
+                    // Assign ibuf_rd_data to row2[2]
+                    if (rd_addr == IMG_WIDTH + 2) begin
+                        state <= PROCESS;
                     end
                 end
 
-                DRAIN: begin
-                    // Write the last word (pipeline had one word in flight)
+                PROCESS: begin
+                    rd_addr <= rd_addr + 1;
+                    ibuf_rd_en   <= 1'b1;
+                    ibuf_rd_addr <= rd_addr + 1;
+                    // Assign ibuf_rd_data to row2[2]
+                    wr_addr <= wr_addr + 1;
                     obuf_wr_en   <= 1'b1;
                     obuf_wr_addr <= wr_addr;
-                    obuf_wr_data <= pixel_out;
-                    finish       <= 1'b1;
-                    state        <= IDLE;
+                    // Assign calculator output to obuf_wr_data
+                    if (wr_addr == BUF_DEPTH - 1) begin
+                        state <= IDLE
+                        finish <= 1'b1;
+                    end
+                    
                 end
+
+                // PROCESS: begin
+                //     pipe_valid <= 1'b1;
+                //     wr_addr    <= rd_addr;  // write address tracks read address with 1 cycle latency
+
+                //     // Write result from previous read (suppressed on first cycle)
+                //     if (pipe_valid) begin
+                //         obuf_wr_en   <= 1'b1;
+                //         obuf_wr_addr <= wr_addr;
+                //         obuf_wr_data <= pixel_out;
+                //     end
+
+                //     if (rd_addr == BUF_AW'(BUF_DEPTH - 1)) begin
+                //         // Last read issued - drain the pipeline
+                //         ibuf_rd_en <= 1'b0;
+                //         state      <= DRAIN;
+                //     end else begin
+                //         rd_addr      <= rd_addr + 1'b1;
+                //         ibuf_rd_en   <= 1'b1;
+                //         ibuf_rd_addr <= rd_addr + 1'b1;
+                //     end
+                // end
+
+                // DRAIN: begin
+                //     // Write the last word (pipeline had one word in flight)
+                //     obuf_wr_en   <= 1'b1;
+                //     obuf_wr_addr <= wr_addr;
+                //     obuf_wr_data <= pixel_out;
+                //     finish       <= 1'b1;
+                //     state        <= IDLE;
+                // end
 
                 default: state <= IDLE;
             endcase
         end
     end
     
-    always_comb begin
-        pixel_out = ~ibuf_rd_data;  // TASK 0: invert all pixels
-    end
+    // always_comb begin
+    //     pixel_out = ~ibuf_rd_data;  // TASK 0: invert all pixels
+    // end
 endmodule

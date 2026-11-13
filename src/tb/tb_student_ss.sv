@@ -2,15 +2,15 @@
 
 module tb_student_ss;
 
-parameter string src_image = "simple_16x16.pgm";
+parameter string src_image = "pattern.pgm";
 
 parameter string src_image_path = "../src/tb/src_images/";
 parameter string out_image_path = "../src/tb/out_images/";
 
 // Parameters matching DUT defaults
 localparam int PIXEL_WIDTH  = 8;
-localparam int FRAME_WIDTH  = 16;
-localparam int FRAME_HEIGHT = 16;
+localparam int FRAME_WIDTH  = 352;
+localparam int FRAME_HEIGHT = 288;
 localparam int TOTAL_PIXELS = FRAME_WIDTH * FRAME_HEIGHT;
 localparam int PIXELS_PER_WORD = 32 / PIXEL_WIDTH;
 localparam int BUF_DEPTH    = TOTAL_PIXELS / PIXELS_PER_WORD;

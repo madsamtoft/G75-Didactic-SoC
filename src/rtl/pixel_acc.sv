@@ -58,7 +58,8 @@ module pixel_acc #(
     typedef enum logic [1:0] {
         IDLE,
         PREFETCH,
-        PROCESS
+        PROCESS,
+        READ_DONE
     } state_t;
 
     state_t            state;
@@ -72,6 +73,8 @@ module pixel_acc #(
     wire [31:0] row1 [0:2];
     wire [31:0] row2 [0:2];
 
+    wire [31:0] shift_reg_input = state == READ_DONE ? 32'b0 : ibuf_rd_data;
+
     shift_reg #(
         .WORD_WIDTH(32),
         .IMG_WIDTH(IMG_WIDTH)
@@ -80,7 +83,7 @@ module pixel_acc #(
         .rst_n   (rst_n),
         .clear   ((state == IDLE) && start),
         .push    (response_valid),
-        .word_in (ibuf_rd_data),
+        .word_in (shift_reg_input),
         .row0    (row0),
         .row1    (row1),
         .row2    (row2)
@@ -124,7 +127,7 @@ module pixel_acc #(
                     rd_addr <= rd_addr + 1;
                     ibuf_rd_en   <= 1'b1;
                     ibuf_rd_addr <= rd_addr + 1;
-                    if (rd_addr == IMG_WIDTH + 2) begin
+                    if (rd_addr == IMG_WIDTH + 1) begin
                         state <= PROCESS;
                     end
                 end
@@ -137,11 +140,22 @@ module pixel_acc #(
                     obuf_wr_en   <= 1'b1;
                     obuf_wr_addr <= wr_addr;
                     // Assign calculator output to obuf_wr_data
+                    if (rd_addr == BUF_DEPTH - 1) begin
+                        state <= READ_DONE;
+                    end
+                    
+                end
+
+                READ_DONE: begin
+                    ibuf_rd_en <= 1'b0;
+                    wr_addr <= wr_addr + 1;
+                    obuf_wr_en   <= 1'b1;
+                    obuf_wr_addr <= wr_addr;
+                    // Assign calculator output to obuf_wr_data
                     if (wr_addr == BUF_DEPTH - 1) begin
                         state <= IDLE;
                         finish <= 1'b1;
                     end
-                    
                 end
 
                 // PROCESS: begin

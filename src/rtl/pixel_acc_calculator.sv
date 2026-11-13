@@ -2,8 +2,8 @@ module pixel_acc_calculator (
     input logic [7:0] s11, s12, s13, s21, s23, s31, s32, s33,
     output logic [7:0] d
 );
-    logic [8:0] x1, x2, x3, y1, y2, y3;
-    logic [10:0] dx, dy;
+    logic signed [8:0] x1, x2, x3, y1, y2, y3;
+    logic signed [10:0] dx, dy;
     logic [9:0] dxabs, dyabs;
 
     always_comb begin
@@ -14,8 +14,8 @@ module pixel_acc_calculator (
         y2 = s12 - s32;
         y3 = s13 - s33;
 
-        dx = (x1 + x3) + {x2, 1'b0};
-        dy = (y1 + y3) + {y2, 1'b0};
+        dx = (x1 + x3) + x2<<<1;
+        dy = (y1 + y3) + y2<<<1;
 
         // potential bug: -1024 will map to 1024 but this will not fit in
         // 10 bits and will truncate to 0. Ideally should round to 1023
@@ -46,18 +46,18 @@ module input_splitter (
     assign s32[0] = w8[7:0];
     assign s33[0] = w8[15:8];
 
-    assign s11[1] = w1[7:0];
-    assign s12[1] = w1[15:8];
-    assign s13[1] = w1[23:16];
+    assign s11[1] = w2[7:0];
+    assign s12[1] = w2[15:8];
+    assign s13[1] = w2[23:16];
     assign s21[1] = w5[7:0];
     assign s23[1] = w5[23:16];
     assign s31[1] = w8[7:0];
     assign s32[1] = w8[15:8];
     assign s33[1] = w8[23:16];
 
-    assign s11[2] = w1[15:8];
-    assign s12[2] = w1[23:16];
-    assign s13[2] = w1[31:24];
+    assign s11[2] = w2[15:8];
+    assign s12[2] = w2[23:16];
+    assign s13[2] = w2[31:24];
     assign s21[2] = w5[15:8];
     assign s23[2] = w5[31:24];
     assign s31[2] = w8[15:8];
@@ -90,6 +90,22 @@ module sobel_processing_core (
     logic [7:0] s32[0:3];
     logic [7:0] s33[0:3];
 
+    // Debugging signals
+    wire [7:0] p11 = s11[0];
+    wire [7:0] p12 = s12[0];
+    wire [7:0] p13 = s12[1];
+    wire [7:0] p14 = s12[2];
+    wire [7:0] p15 = s12[3];
+    wire [7:0] p16 = s13[3];
+    wire [7:0] p21 = s21[0];
+    wire [7:0] p26 = s23[3];
+    wire [7:0] p31 = s31[0];
+    wire [7:0] p32 = s32[0];
+    wire [7:0] p33 = s32[1];
+    wire [7:0] p34 = s32[2];
+    wire [7:0] p35 = s32[3];
+    wire [7:0] p36 = s33[3];
+
     logic [7:0] d1, d2, d3, d4;
 
     // Instantiate modules
@@ -118,5 +134,10 @@ module sobel_processing_core (
 
     // Bind output
     // d1 is the leftmost pixel in the word, while d4 is the rightmost pixel
-    assign dOut = {d4, d3, d2, d1};
+    assign dOut = {
+        d4 > 0 ? 8'hFF : 8'h00,
+        d3 > 0 ? 8'hFF : 8'h00,
+        d2 > 0 ? 8'hFF : 8'h00,
+        d1 > 0 ? 8'hFF : 8'h00
+    };
 endmodule

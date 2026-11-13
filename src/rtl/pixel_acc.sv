@@ -64,6 +64,7 @@ module pixel_acc #(
     state_t            state;
     logic [BUF_AW-1:0] rd_addr;   // current ibuf read address
     logic [BUF_AW-1:0] wr_addr;   // current obuf write address (= rd_addr delayed 1 cycle)
+    logic response_valid;
     // logic              pipe_valid; // 0 on first PROCESS cycle (rd_data not yet valid)
     // logic [31:0] pixel_out;
 
@@ -98,7 +99,7 @@ module pixel_acc #(
             state      <= IDLE;
             rd_addr    <= '0;
             wr_addr    <= '0;
-            // pipe_valid <= 1'b0;
+            response_valid <= 1'b0;
             ibuf_rd_en <= 1'b0;
             obuf_wr_en <= 1'b0;
             finish     <= 1'b0;
@@ -109,16 +110,17 @@ module pixel_acc #(
 
             case (state)
                 IDLE: begin
-                    // pipe_valid <= 1'b0;
+                    response_valid <= 1'b0;
                     if (start) begin
                         rd_addr      <= '0;
                         ibuf_rd_en   <= 1'b1;
                         ibuf_rd_addr <= '0;
-                        state        <= PROCESS;
+                        state        <= PREFETCH;
                     end
                 end
 
                 PREFETCH: begin
+                    response_valid <= 1'b1;
                     rd_addr <= rd_addr + 1;
                     ibuf_rd_en   <= 1'b1;
                     ibuf_rd_addr <= rd_addr + 1;

@@ -71,10 +71,10 @@ module pixel_acc #(
 
     localparam int HCOUNT_W = $clog2(IMG_WIDTH);
     logic [HCOUNT_W-1:0] hcount;
-    logic left = hcount == 0;
-    logic right = hcount == IMG_WIDTH - 1;
-    logic top = wr_addr < IMG_WIDTH; 
-    logic bottom = wr_addr >= BUF_DEPTH - IMG_WIDTH; 
+    wire left = hcount == 0;
+    wire right = hcount == IMG_WIDTH - 1;
+    wire top = wr_addr < IMG_WIDTH;
+    wire bottom = wr_addr >= BUF_DEPTH - IMG_WIDTH;
 
     wire [31:0] row0 [0:2];
     wire [31:0] row1 [0:2];
@@ -96,6 +96,8 @@ module pixel_acc #(
         .row2    (row2)
     );
 
+    logic [31:0] sobel_output;
+
     sobel_processing_core u_processor (
         .row0   (row0),
         .row1   (row1),
@@ -104,7 +106,7 @@ module pixel_acc #(
         .right  (right),
         .top    (top),
         .bottom (bottom),
-        .dOut   (obuf_wr_data)
+        .dOut   (sobel_output)
     );
 
     // ---- FSM ----
@@ -151,6 +153,7 @@ module pixel_acc #(
                     wr_addr <= wr_addr + 1;
                     obuf_wr_en   <= 1'b1;
                     obuf_wr_addr <= wr_addr;
+                    obuf_wr_data <= sobel_output;
                     // Assign calculator output to obuf_wr_data
                     if (rd_addr == BUF_DEPTH - 1) begin
                         state <= READ_DONE;

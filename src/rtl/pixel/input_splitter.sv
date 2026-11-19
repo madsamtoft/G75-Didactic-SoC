@@ -21,24 +21,24 @@ module input_splitter (
     output logic [7:0] s36
 );
 
-    logic p11 = w1[31:24];
-    logic p12 = w2[7:0];
-    logic p13 = w2[15:8];
-    logic p14 = w2[23:16];
-    logic p15 = w2[31:24];
-    logic p16 = w3[7:0];
-    logic p21 = w4[31:24];
-    logic p22 = w5[7:0];
-    logic p23 = w5[15:8];
-    logic p24 = w5[23:16];
-    logic p25 = w5[31:24];
-    logic p26 = w6[7:0];
-    logic p31 = w7[31:24];
-    logic p32 = w8[7:0];
-    logic p33 = w8[15:8];
-    logic p34 = w8[23:16];
-    logic p35 = w8[31:24];
-    logic p36 = w9[7:0];
+    wire [7:0] p11 = w1[31:24];
+    wire [7:0] p12 = w2[7:0];
+    wire [7:0] p13 = w2[15:8];
+    wire [7:0] p14 = w2[23:16];
+    wire [7:0] p15 = w2[31:24];
+    wire [7:0] p16 = w3[7:0];
+    wire [7:0] p21 = w4[31:24];
+    wire [7:0] p22 = w5[7:0];
+    wire [7:0] p23 = w5[15:8];
+    wire [7:0] p24 = w5[23:16];
+    wire [7:0] p25 = w5[31:24];
+    wire [7:0] p26 = w6[7:0];
+    wire [7:0] p31 = w7[31:24];
+    wire [7:0] p32 = w8[7:0];
+    wire [7:0] p33 = w8[15:8];
+    wire [7:0] p34 = w8[23:16];
+    wire [7:0] p35 = w8[31:24];
+    wire [7:0] p36 = w9[7:0];
 
     assign s11 = left && top ? p22 : (left ? p12 : (top ? p12 : p11));
     assign s16 = right && top ? p25 : (right ? p15 : (top ? p26 : p16));

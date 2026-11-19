@@ -69,6 +69,13 @@ module pixel_acc #(
     // logic              pipe_valid; // 0 on first PROCESS cycle (rd_data not yet valid)
     // logic [31:0] pixel_out;
 
+    localparam int HCOUNT_W = $clog2(IMG_WIDTH);
+    logic [HCOUNT_W-1:0] hcount;
+    logic left = hcount == 0;
+    logic right = hcount == IMG_WIDTH - 1;
+    logic top = wr_addr < IMG_WIDTH; 
+    logic bottom = wr_addr >= BUF_DEPTH - IMG_WIDTH; 
+
     wire [31:0] row0 [0:2];
     wire [31:0] row1 [0:2];
     wire [31:0] row2 [0:2];
@@ -93,6 +100,10 @@ module pixel_acc #(
         .row0   (row0),
         .row1   (row1),
         .row2   (row2),
+        .left   (left),
+        .right  (right),
+        .top    (top),
+        .bottom (bottom),
         .dOut   (obuf_wr_data)
     );
 
@@ -102,6 +113,7 @@ module pixel_acc #(
             state      <= IDLE;
             rd_addr    <= '0;
             wr_addr    <= '0;
+            hcount     <= '0;
             response_valid <= 1'b0;
             ibuf_rd_en <= 1'b0;
             obuf_wr_en <= 1'b0;
@@ -143,6 +155,13 @@ module pixel_acc #(
                     if (rd_addr == BUF_DEPTH - 1) begin
                         state <= READ_DONE;
                     end
+                    // Increment hcounter
+                    if (hcount == IMG_WIDTH - 1) begin
+                        hcount <= '0;
+                    end
+                    else begin
+                        hcount <= hcount + 1;
+                    end
                 end
 
                 READ_DONE: begin
@@ -154,6 +173,13 @@ module pixel_acc #(
                     if (wr_addr == BUF_DEPTH - 1) begin
                         state <= IDLE;
                         finish <= 1'b1;
+                    end
+                    // Increment hcounter
+                    if (hcount == IMG_WIDTH - 1) begin
+                        hcount <= '0;
+                    end
+                    else begin
+                        hcount <= hcount + 1;
                     end
                 end
                 default: state <= IDLE;

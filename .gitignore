@@ -27,3 +27,8 @@ fpga/local.mk
 # Core dumps
 *core
 *.DS_Store
+*core.*
+*.DS_Store
+
+# Local only files
+sim/config.local.mk

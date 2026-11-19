@@ -166,11 +166,15 @@ elaborate_fast: library_mapping
 	-o $(DUT)_opt \
 	-l $(BUILD_DIR)/logs/opt/$(START_TIME)_vopt.log
 
+VSIM_FLAGS ?=
+include config.local.mk
+
 run_sim: library_mapping
 	cd $(BUILD_DIR)
 	vsim $(GUI) \
 	$(DUT_LIBS) $(VSIM_OPTS) \
 	-work $(BUILD_DIR)/didactic_lib \
+	$(VSIM_FLAGS) \
 	$(DUT)_opt \
 	$(if $(filter -c,$(GUI)),-do "run -all;",-do "do wave.do; do mem.do; run -all;") \
 	-l $(BUILD_DIR)/logs/sim/$(START_TIME)_sim.log

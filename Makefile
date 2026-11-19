@@ -138,8 +138,9 @@ sim-vivado sim-vivado-check:
 sim-vivado-ss:
 	$(MAKE) sim-vivado SIM_TOP=tb_student_ss
 
+sim-vivado-SoC: TEST=pixel_inversion
 sim-vivado-SoC:
-	$(MAKE) sim-vivado SIM_TOP=tb_didactic
+	$(MAKE) sim-vivado SIM_TOP=tb_didactic TEST=$(TEST) BYPASS_UART=1
 
 ######################################################################
 # clean files

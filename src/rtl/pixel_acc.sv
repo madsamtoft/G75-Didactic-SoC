@@ -143,7 +143,6 @@ module pixel_acc #(
                     if (rd_addr == BUF_DEPTH - 1) begin
                         state <= READ_DONE;
                     end
-                    
                 end
 
                 READ_DONE: begin
@@ -157,44 +156,8 @@ module pixel_acc #(
                         finish <= 1'b1;
                     end
                 end
-
-                // PROCESS: begin
-                //     pipe_valid <= 1'b1;
-                //     wr_addr    <= rd_addr;  // write address tracks read address with 1 cycle latency
-
-                //     // Write result from previous read (suppressed on first cycle)
-                //     if (pipe_valid) begin
-                //         obuf_wr_en   <= 1'b1;
-                //         obuf_wr_addr <= wr_addr;
-                //         obuf_wr_data <= pixel_out;
-                //     end
-
-                //     if (rd_addr == BUF_AW'(BUF_DEPTH - 1)) begin
-                //         // Last read issued - drain the pipeline
-                //         ibuf_rd_en <= 1'b0;
-                //         state      <= DRAIN;
-                //     end else begin
-                //         rd_addr      <= rd_addr + 1'b1;
-                //         ibuf_rd_en   <= 1'b1;
-                //         ibuf_rd_addr <= rd_addr + 1'b1;
-                //     end
-                // end
-
-                // DRAIN: begin
-                //     // Write the last word (pipeline had one word in flight)
-                //     obuf_wr_en   <= 1'b1;
-                //     obuf_wr_addr <= wr_addr;
-                //     obuf_wr_data <= pixel_out;
-                //     finish       <= 1'b1;
-                //     state        <= IDLE;
-                // end
-
                 default: state <= IDLE;
             endcase
         end
     end
-    
-    // always_comb begin
-    //     pixel_out = ~ibuf_rd_data;  // TASK 0: invert all pixels
-    // end
 endmodule

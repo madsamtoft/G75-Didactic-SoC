@@ -69,7 +69,7 @@ INCLUDES_F = includes.f
 # Handle VHDL and SV versions of pixel_acc
 ACC_LANG ?= sv
 ifeq ($(ACC_LANG),sv)
-PIXEL_ACC_SV  = ../src/rtl/pixel_acc.sv ../src/rtl/pixel_acc_calculator.sv ../src/rtl/pixel_shift_reg.sv
+PIXEL_ACC_SV  = ../src/rtl/pixel_acc.sv $(wildcard ../src/rtl/pixel/*.sv)
 WAVE_SS       = wave_ss.do
 else ifeq ($(ACC_LANG),vhdl)
 PIXEL_ACC_SV  = ../src/rtl/pixel_acc_vhd_wrapper.sv

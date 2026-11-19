@@ -26,5 +26,4 @@ fpga/local.mk
 
 # Core dumps
 *core
-*core.*
 *.DS_Store

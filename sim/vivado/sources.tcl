@@ -22,7 +22,7 @@ proc xsim_sources {root config} {
     }
     set vhdl {}
     set includes {}
-    set defines {}
+    set defines {XSIM}
     set generics {}
     switch -- $TOP {
         tb_student_ss {
@@ -51,7 +51,7 @@ proc xsim_sources {root config} {
             foreach path {vendor/lowrisc_ip/dv/sv/dv_utils vendor/lowrisc_ip/ip/prim/rtl rtl} {
                 lappend includes $root/vendor_ips/ibex/$path
             }
-            lappend defines RVFI INC_ASSERT USE_UART USE_SPI XSIM
+            lappend defines RVFI INC_ASSERT USE_UART USE_SPI
             foreach {name macro} {FAST_UART SIM_FAST_UART SIM_UART_MODEL SIM_UART_MODEL BYPASS_UART BYPASS_UART} {
                 if {[dict get $config $name]} {lappend defines $macro}
             }
@@ -65,8 +65,7 @@ proc xsim_sources {root config} {
             lappend vhdl $root/src/rtl/pixel_acc_vhd.vhd
             lappend files $root/src/rtl/pixel_acc_vhd_wrapper.sv
         } else {
-            lappend files $root/src/rtl/pixel_shift_reg.sv
-            lappend files $root/src/rtl/pixel_acc_calculator.sv
+            lappend files {*}[lsort [glob $root/src/rtl/pixel/*.sv]]
             lappend files $root/src/rtl/pixel_acc.sv
         }
     }

@@ -173,16 +173,15 @@ initial begin
     // This exercises the full firmware CSR path without the serial link.
     // ----------------------------------------------------------
     $display("[TB] BYPASS_UART: pre-loading ibuf directly...");
-    for (i = 0; i < TOTAL_PIXELS /4 + 1; i++) begin
-        force tb_didactic.i_didactic.Student_SS_0.Student_area_0.ibuf[i] =
+    // ibuf is a BRAM instance; deposit into its memory array. The BRAM
+    // does not reset its contents, so no force/release is needed.
+    for (i = 0; i < TOTAL_PIXELS / 4; i++) begin
+        tb_didactic.i_didactic.Student_SS_0.Student_area_0.ibuf.mem[i] =
             {pixels_in[i*4+3], pixels_in[i*4+2], pixels_in[i*4+1], pixels_in[i*4+0]};
     end
 
     #2500;  // wait for CPU boot
 
-    @(posedge clk);
-    for (i = 0; i < TOTAL_PIXELS/4 + 1; i++)
-        release tb_didactic.i_didactic.Student_SS_0.Student_area_0.ibuf[i];
     $display("[TB] ibuf pre-loaded, waiting for CPU to write CSR_DATA_READY...");
 `else
     // ----------------------------------------------------------

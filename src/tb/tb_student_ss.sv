@@ -187,10 +187,13 @@ initial begin
     $finish;
 end
 
+`ifndef XSIM
+// XSim's Tcl runner owns VCD capture.
 initial begin
     $dumpfile("ss.vcd");
     $dumpvars(0, tb_student_ss);
 end
+`endif
 
 
 endmodule

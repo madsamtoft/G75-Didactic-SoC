@@ -59,9 +59,9 @@ module sobel_processing_core (
     // Bind output
     // d1 is the leftmost pixel in the word, while d4 is the rightmost pixel
     assign dOut = {
-        d4 > 0 ? 8'hFF : 8'h00,
-        d3 > 0 ? 8'hFF : 8'h00,
-        d2 > 0 ? 8'hFF : 8'h00,
-        d1 > 0 ? 8'hFF : 8'h00
+        d4,
+        d3,
+        d2,
+        d1
     };
 endmodule

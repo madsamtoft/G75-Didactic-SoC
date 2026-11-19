@@ -71,10 +71,10 @@ module pixel_acc #(
 
     localparam int HCOUNT_W = $clog2(IMG_WIDTH);
     logic [HCOUNT_W-1:0] hcount;
-    logic left = hcount == 0;
-    logic right = hcount == IMG_WIDTH - 1;
-    logic top = wr_addr < IMG_WIDTH; 
-    logic bottom = wr_addr >= BUF_DEPTH - IMG_WIDTH; 
+    wire left = hcount == 0;
+    wire right = hcount == IMG_WIDTH - 1;
+    wire top = wr_addr < IMG_WIDTH; 
+    wire bottom = wr_addr >= BUF_DEPTH - IMG_WIDTH; 
 
     wire [31:0] row0 [0:2];
     wire [31:0] row1 [0:2];

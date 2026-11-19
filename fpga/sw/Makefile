@@ -38,13 +38,12 @@ hex_test:
 # byte-swap sed to split the last word across two lines, corrupting the final instruction
 	@SIZE=$$(wc -c < $(BUILD_DIR)/tmp.bin); PAD=$$(( (4 - $$SIZE % 4) % 4 )); \
 	if [ $$PAD -ne 0 ]; then dd if=/dev/zero bs=1 count=$$PAD >> $(BUILD_DIR)/tmp.bin 2>/dev/null; fi
-	xxd -ps $(BUILD_DIR)/tmp.bin $(BUILD_DIR)/tmp.hex
-	tr -d '\n' < $(BUILD_DIR)/tmp.hex > $(BUILD_DIR)/tmp_nl.hex	
-	sed -r 's/(.{8})/\1\n/g' < $(BUILD_DIR)/tmp_nl.hex > $(BUILD_DIR)/tmp_be.hex
+# Four bytes per line avoids nonportable sed newline replacements.
+	xxd -p -c 4 $(BUILD_DIR)/tmp.bin > $(BUILD_DIR)/tmp_be.hex
 	sed -E 's/(..)(..)(..)(..)/\4\3\2\1/' < $(BUILD_DIR)/tmp_be.hex > $(BUILD_DIR)/tmp_le.hex
 
 trim:
-	head -$(shell wc -w < $(BUILD_DIR)/tmp_le.hex) $(BUILD_DIR)/tmp_le.hex > $(BUILD_DIR)/sw/$(TESTCASE).hex
+	head -n $$(wc -l < $(BUILD_DIR)/tmp_le.hex) $(BUILD_DIR)/tmp_le.hex > $(BUILD_DIR)/sw/$(TESTCASE).hex
 
 dump:
 	$(OBJDUMP) $(BUILD_DIR)/sw/$(TESTCASE).elf -d -S -l > $(BUILD_DIR)/sw/$(TESTCASE).asm

@@ -167,7 +167,7 @@ elaborate_fast: library_mapping
 	-l $(BUILD_DIR)/logs/opt/$(START_TIME)_vopt.log
 
 VSIM_FLAGS ?=
-include config.local.mk
+-include config.local.mk
 
 run_sim: library_mapping
 	cd $(BUILD_DIR)

@@ -4,8 +4,6 @@ module pixel_shift_reg #(
 )(
     input  logic                  clk,
     input  logic                  rst_n,
-    input  logic                  clear,
-    input  logic                  push,
     input  logic [WORD_WIDTH-1:0] word_in,
     output wire  [WORD_WIDTH-1:0] row0 [0:2],
     output wire  [WORD_WIDTH-1:0] row1 [0:2],
@@ -30,10 +28,7 @@ module pixel_shift_reg #(
         if (!rst_n) begin
             for (int i = 0; i < DEPTH; i++)
                 words[i] <= '0;
-        end else if (clear) begin
-            for (int i = 0; i < DEPTH; i++)
-                words[i] <= '0;
-        end else if (push) begin
+        end begin
             words <= {words[1:DEPTH-1], word_in};
         end
     end

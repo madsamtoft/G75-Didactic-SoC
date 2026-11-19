@@ -129,11 +129,17 @@ vivado-check vivado-start:
 
 # Independent XSim backend; existing Questa targets above remain unchanged.
 XSIM_BUILD_DIR = $(if $(or $(filter /%,$(BUILD_DIR)),$(findstring :,$(BUILD_DIR))),$(BUILD_DIR),$(CURDIR)/$(BUILD_DIR))
-.PHONY: sim-vivado sim-vivado-check
+.PHONY: sim-vivado sim-vivado-check sim-vivado-ss sim-vivado-SoC
 sim-vivado: $(if $(filter tb_didactic,$(SIM_TOP)),build_test)
 
 sim-vivado sim-vivado-check:
 	$(MAKE) -C sim/vivado $@ BUILD_DIR="$(XSIM_BUILD_DIR)" ACC_LANG=$(ACC_LANG) TESTCASE=$(TEST)
+
+sim-vivado-ss:
+	$(MAKE) sim-vivado SIM_TOP=tb_student_ss
+
+sim-vivado-SoC:
+	$(MAKE) sim-vivado SIM_TOP=tb_didactic
 
 ######################################################################
 # clean files

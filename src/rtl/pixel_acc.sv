@@ -75,7 +75,7 @@ module pixel_acc #(
 
     wire [31:0] shift_reg_input = state == READ_DONE ? 32'b0 : ibuf_rd_data;
 
-    shift_reg #(
+    pixel_shift_reg #(
         .WORD_WIDTH(32),
         .IMG_WIDTH(IMG_WIDTH)
     ) i_shift_reg (

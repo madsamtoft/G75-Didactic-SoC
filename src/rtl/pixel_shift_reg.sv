@@ -1,4 +1,4 @@
-module shift_reg #(
+module pixel_shift_reg #(
     parameter int WORD_WIDTH = 32,
     parameter int IMG_WIDTH  = 88  // Words per image row
 )(

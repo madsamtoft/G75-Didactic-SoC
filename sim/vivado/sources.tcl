@@ -65,6 +65,8 @@ proc xsim_sources {root config} {
             lappend vhdl $root/src/rtl/pixel_acc_vhd.vhd
             lappend files $root/src/rtl/pixel_acc_vhd_wrapper.sv
         } else {
+            lappend files $root/src/rtl/pixel_shift_reg.sv
+            lappend files $root/src/rtl/pixel_acc_calculator.sv
             lappend files $root/src/rtl/pixel_acc.sv
         }
     }

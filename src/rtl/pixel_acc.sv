@@ -98,6 +98,8 @@ module pixel_acc #(
     );
 
     always_comb begin
+        next_state = state;
+        
         next_rd_addr <= '0;
         next_wr_addr <= '0;
         next_hcount <= '0;

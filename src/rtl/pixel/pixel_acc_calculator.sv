@@ -14,14 +14,14 @@ module pixel_acc_calculator (
         y2 = s12 - s32;
         y3 = s13 - s33;
 
-        dx = (x1 + x3) + x2<<<1;
-        dy = (y1 + y3) + y2<<<1;
+        dx = x1 + x3 + (x2<<<1);
+        dy = y1 + y3 + (y2<<<1);
 
         // potential bug: -1024 will map to 1024 but this will not fit in
         // 10 bits and will truncate to 0. Ideally should round to 1023
         dxabs = dx[10] ? -dx : dx;
         dyabs = dy[10] ? -dy : dy;
-        d = (dxabs + dyabs) >> 3; // Right now divides by 8, but should preferably divide by 6
+        d = ({1'b0, dxabs} + {1'b0, dyabs}) >> 3; // Right now divides by 8, but should preferably divide by 6
     end
 endmodule
 

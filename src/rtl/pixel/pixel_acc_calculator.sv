@@ -3,7 +3,7 @@ module pixel_acc_calculator (
     output logic [7:0] d
 );
     logic signed [8:0] x1, x2, x3, y1, y2, y3;
-    logic signed [10:0] dx, dy;
+    logic signed [10:0] dx, dy, sum_of_abs_xy;
     logic [9:0] dxabs, dyabs;
 
     always_comb begin
@@ -21,7 +21,11 @@ module pixel_acc_calculator (
         // 10 bits and will truncate to 0. Ideally should round to 1023
         dxabs = dx[10] ? -dx : dx;
         dyabs = dy[10] ? -dy : dy;
-        d = (dxabs + dyabs) >> 3; // Right now divides by 8, but should preferably divide by 6
+        
+        // d = (dxabs + dyabs) >> 3; // Right now divides by 8, but should preferably divide by 6
+        sum_of_abs_xy = (dxabs + dyabs);
+        d = (sum_of_abs_xy >> 3) + (sum_of_abs_xy >> 5) + (sum_of_abs_xy >> 7) + (sum_of_abs_xy >> 9) + (sum_of_abs_xy[10]);  
+
     end
 endmodule
 

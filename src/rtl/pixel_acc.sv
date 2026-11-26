@@ -62,18 +62,17 @@ module pixel_acc #(
         READ_DONE
     } state_t;
 
-    state_t            state;
-    logic [BUF_AW-1:0] rd_addr;   // current ibuf read address
-    logic [BUF_AW-1:0] wr_addr;   // current obuf write address (= rd_addr delayed 1 cycle)
-    logic response_valid;
-    // logic              pipe_valid; // 0 on first PROCESS cycle (rd_data not yet valid)
-    // logic [31:0] pixel_out;
+    state_t state, next_state;
+    logic [BUF_AW-1:0] rd_addr, next_rd_addr;
+    logic [BUF_AW-1:0] wr_addr, next_wr_addr;
 
-    wire [31:0] row0 [0:2];
-    wire [31:0] row1 [0:2];
-    wire [31:0] row2 [0:2];
+    localparam int HCOUNT_W = $clog2(IMG_WIDTH);
+    logic [HCOUNT_W-1:0] hcount, next_hcount;
+    logic left, right, top, bottom;
 
-    wire [31:0] shift_reg_input = state == READ_DONE ? 32'b0 : ibuf_rd_data;
+    logic [31:0] row0 [0:2];
+    logic [31:0] row1 [0:2];
+    logic [31:0] row2 [0:2];
 
     pixel_shift_reg #(
         .WORD_WIDTH(32),
@@ -81,9 +80,7 @@ module pixel_acc #(
     ) i_shift_reg (
         .clk     (clk),
         .rst_n   (rst_n),
-        .clear   ((state == IDLE) && start),
-        .push    (response_valid),
-        .word_in (shift_reg_input),
+        .word_in (ibuf_rd_data),
         .row0    (row0),
         .row1    (row1),
         .row2    (row2)
@@ -93,71 +90,79 @@ module pixel_acc #(
         .row0   (row0),
         .row1   (row1),
         .row2   (row2),
+        .left   (left),
+        .right  (right),
+        .top    (top),
+        .bottom (bottom),
         .dOut   (obuf_wr_data)
     );
 
-    // ---- FSM ----
+    always_comb begin
+        next_rd_addr <= '0;
+        next_wr_addr <= '0;
+        next_hcount <= '0;
+
+        left <= hcount == 0;
+        right <= hcount == IMG_WIDTH - 1;
+        top <= wr_addr < IMG_WIDTH;
+        bottom <= wr_addr >= BUF_DEPTH - IMG_WIDTH;
+
+        ibuf_rd_en <= 1'b0;
+        ibuf_rd_addr <= rd_addr;
+        obuf_wr_en <= 1'b0;
+        obuf_wr_addr <= wr_addr;
+        finish <= 1'b0;
+
+        case (state)
+            IDLE: begin
+                if (start) begin
+                    next_rd_addr <= 1;
+                    ibuf_rd_en <= 1'b1;
+                    next_state <= PREFETCH;
+                end
+            end
+
+            PREFETCH: begin
+                next_rd_addr <= rd_addr + 1;
+                ibuf_rd_en <= 1'b1;
+                if (rd_addr == IMG_WIDTH + 2) begin
+                    next_state <= PROCESS;
+                end
+            end
+
+            PROCESS: begin
+                next_rd_addr <= rd_addr + 1;
+                ibuf_rd_en <= rd_addr < BUF_DEPTH;
+                next_wr_addr <= wr_addr + 1;
+                obuf_wr_en <= 1'b1;
+                if (hcount == IMG_WIDTH - 1) begin
+                    next_hcount <= '0;
+                end
+                else begin
+                    next_hcount <= hcount + 1;
+                end
+                if (wr_addr == BUF_DEPTH - 1) begin
+                    next_state <= IDLE;
+                    finish <= 1'b1;
+                end
+            end
+
+            default: next_state <= IDLE;
+        endcase
+    end
+
     always_ff @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
-            state      <= IDLE;
-            rd_addr    <= '0;
-            wr_addr    <= '0;
-            response_valid <= 1'b0;
-            ibuf_rd_en <= 1'b0;
-            obuf_wr_en <= 1'b0;
-            finish     <= 1'b0;
-        end else begin
-            ibuf_rd_en <= 1'b0;
-            obuf_wr_en <= 1'b0;
-            finish     <= 1'b0;
-
-            case (state)
-                IDLE: begin
-                    response_valid <= 1'b0;
-                    if (start) begin
-                        rd_addr      <= '0;
-                        ibuf_rd_en   <= 1'b1;
-                        ibuf_rd_addr <= '0;
-                        state        <= PREFETCH;
-                    end
-                end
-
-                PREFETCH: begin
-                    response_valid <= 1'b1;
-                    rd_addr <= rd_addr + 1;
-                    ibuf_rd_en   <= 1'b1;
-                    ibuf_rd_addr <= rd_addr + 1;
-                    if (rd_addr == IMG_WIDTH + 1) begin
-                        state <= PROCESS;
-                    end
-                end
-
-                PROCESS: begin
-                    rd_addr <= rd_addr + 1;
-                    ibuf_rd_en   <= 1'b1;
-                    ibuf_rd_addr <= rd_addr + 1;
-                    wr_addr <= wr_addr + 1;
-                    obuf_wr_en   <= 1'b1;
-                    obuf_wr_addr <= wr_addr;
-                    // Assign calculator output to obuf_wr_data
-                    if (rd_addr == BUF_DEPTH - 1) begin
-                        state <= READ_DONE;
-                    end
-                end
-
-                READ_DONE: begin
-                    ibuf_rd_en <= 1'b0;
-                    wr_addr <= wr_addr + 1;
-                    obuf_wr_en   <= 1'b1;
-                    obuf_wr_addr <= wr_addr;
-                    // Assign calculator output to obuf_wr_data
-                    if (wr_addr == BUF_DEPTH - 1) begin
-                        state <= IDLE;
-                        finish <= 1'b1;
-                    end
-                end
-                default: state <= IDLE;
-            endcase
+            state <= IDLE;
+            rd_addr <= '0;
+            wr_addr <= '0;
+            hcount <= '0;
+        end
+        else begin
+            state <= next_state;
+            rd_addr <= next_rd_addr;
+            wr_addr <= next_wr_addr;
+            hcount <= next_hcount;
         end
     end
 endmodule

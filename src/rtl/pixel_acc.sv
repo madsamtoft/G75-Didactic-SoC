@@ -27,22 +27,22 @@ module pixel_acc #(
     parameter int BUF_DEPTH = 25344,
     parameter int IMG_WIDTH = 88      // 352 pixels / 4 pixels-per-word
 )(
-    input  logic                  clk,
-    input  logic                  rst_n,
+    input  logic              clk,
+    input  logic              rst_n,
 
     // ibuf read port
-    output logic                  ibuf_rd_en,
-    output logic [BUF_AW-1:0]     ibuf_rd_addr,
-    input  logic [31:0]           ibuf_rd_data,
+    output logic              ibuf_rd_en,
+    output logic [BUF_AW-1:0] ibuf_rd_addr,
+    input  logic [31:0]       ibuf_rd_data,
 
     // obuf write port
-    output logic                  obuf_wr_en,
-    output logic [BUF_AW-1:0]     obuf_wr_addr,
-    output logic [31:0]           obuf_wr_data,
+    output logic              obuf_wr_en,
+    output logic [BUF_AW-1:0] obuf_wr_addr,
+    output logic [31:0]       obuf_wr_data,
 
     // handshake
-    input  logic                  start,
-    output logic                  finish
+    input  logic              start,
+    output logic              finish
 );
 
     // ============================================================
@@ -100,71 +100,71 @@ module pixel_acc #(
     always_comb begin
         next_state = state;
         
-        next_rd_addr <= '0;
-        next_wr_addr <= '0;
-        next_hcount <= '0;
+        next_rd_addr = '0;
+        next_wr_addr = '0;
+        next_hcount  = '0;
 
-        left <= hcount == 0;
-        right <= hcount == IMG_WIDTH - 1;
-        top <= wr_addr < IMG_WIDTH;
-        bottom <= wr_addr >= BUF_DEPTH - IMG_WIDTH;
+        left   = hcount == 0;
+        right  = hcount == IMG_WIDTH - 1;
+        top    = wr_addr < IMG_WIDTH;
+        bottom = wr_addr >= BUF_DEPTH - IMG_WIDTH;
 
-        ibuf_rd_en <= 1'b0;
-        ibuf_rd_addr <= rd_addr;
-        obuf_wr_en <= 1'b0;
-        obuf_wr_addr <= wr_addr;
-        finish <= 1'b0;
+        ibuf_rd_en   = 1'b0;
+        ibuf_rd_addr = rd_addr;
+        obuf_wr_en   = 1'b0;
+        obuf_wr_addr = wr_addr;
+        finish       = 1'b0;
 
         case (state)
             IDLE: begin
                 if (start) begin
-                    next_rd_addr <= 1;
-                    ibuf_rd_en <= 1'b1;
-                    next_state <= PREFETCH;
+                    next_rd_addr = 1;
+                    ibuf_rd_en   = 1'b1;
+                    next_state   = PREFETCH;
                 end
             end
 
             PREFETCH: begin
-                next_rd_addr <= rd_addr + 1;
-                ibuf_rd_en <= 1'b1;
+                next_rd_addr = rd_addr + 1;
+                ibuf_rd_en   = 1'b1;
                 if (rd_addr == IMG_WIDTH + 2) begin
-                    next_state <= PROCESS;
+                    next_state = PROCESS;
                 end
             end
 
             PROCESS: begin
-                next_rd_addr <= rd_addr + 1;
-                ibuf_rd_en <= rd_addr < BUF_DEPTH;
-                next_wr_addr <= wr_addr + 1;
-                obuf_wr_en <= 1'b1;
+                next_rd_addr = rd_addr + 1;
+                ibuf_rd_en   = rd_addr < BUF_DEPTH;
+                next_wr_addr = wr_addr + 1;
+                obuf_wr_en   = 1'b1;
                 if (hcount == IMG_WIDTH - 1) begin
-                    next_hcount <= '0;
+                    next_hcount = '0;
                 end
                 else begin
-                    next_hcount <= hcount + 1;
+                    next_hcount = hcount + 1;
                 end
                 if (wr_addr == BUF_DEPTH - 1) begin
-                    next_state <= IDLE;
-                    finish <= 1'b1;
+                    next_state = IDLE;
+                    finish = 1'b1;
                 end
             end
 
-            default: next_state <= IDLE;
+            default: next_state = IDLE;
         endcase
     end
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
-            state <= IDLE;
+            state   <= IDLE;
             rd_addr <= '0;
             wr_addr <= '0;
-            hcount <= '0;
+            hcount  <= '0;
         end
         else begin
-            state <= next_state;
+            state   <= next_state;
             rd_addr <= next_rd_addr;
             wr_addr <= next_wr_addr;
-            hcount <= next_hcount;
+            hcount  <= next_hcount;
         end
     end
 endmodule

@@ -28,7 +28,7 @@ module pixel_shift_reg #(
         if (!rst_n) begin
             for (int i = 0; i < DEPTH; i++)
                 words[i] <= '0;
-        end begin
+        end else begin
             words <= {words[1:DEPTH-1], word_in};
         end
     end

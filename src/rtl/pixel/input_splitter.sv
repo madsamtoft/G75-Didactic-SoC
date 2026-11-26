@@ -40,7 +40,7 @@ module input_splitter (
     wire [7:0] p35 = w8[31:24];
     wire [7:0] p36 = w9[7:0];
 
-    assign s11 = left && top ? p22 : (left ? p12 : (top ? p12 : p11));
+    assign s11 = left && top ? p22 : (left ? p12 : (top ? p21 : p11));
     assign s16 = right && top ? p25 : (right ? p15 : (top ? p26 : p16));
     assign s31 = left && bottom ? p22 : (left ? p32 : (bottom ? p21 : p31));
     assign s36 = right && bottom ? p25 : (right ? p35 : (bottom ? p26 : p36));

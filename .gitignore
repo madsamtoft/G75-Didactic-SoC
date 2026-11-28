@@ -32,3 +32,4 @@ fpga/local.mk
 
 # Local only files
 sim/config.local.mk
+sim/ss.vcd
